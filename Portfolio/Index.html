@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My OS</title>
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       This file is ONLY the OS shell: the wallpaper canvas and the
+       taskbar. Nothing app-specific belongs in here — the icon grid,
+       every popup window, and every app's content are all fetched
+       in and mounted by main.js at runtime. See README.md.
+       ============================================================ -->
+
+  <div id="desktop">
+
+    <div id="desktop-canvas">
+      <!-- widget/app-grid gets mounted here -->
+      <div id="app-grid-root"></div>
+
+      <!-- one widget/popup instance gets appended here per open app -->
+      <div id="popup-layer"></div>
+    </div>
+
+    <nav id="taskbar">
+      <div id="taskbar-brand">my-os</div>
+      <div id="taskbar-clock"></div>
+    </nav>
+
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
