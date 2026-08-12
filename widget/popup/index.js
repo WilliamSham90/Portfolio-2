@@ -9,8 +9,9 @@ let zTop = 10;
  * @param {HTMLElement} container  this popup instance's own root element
  * @param {{id:string,name:string,path:string}} app  the app to display
  * @param {number} offset  pixel offset so multiple windows don't stack exactly
+ * @param {any[]} appInitArgs  extra args passed straight through to the app's own init()
  */
-export async function init(container, app, offset = 0) {
+export async function init(container, app, offset = 0, appInitArgs = []) {
   const win = container.querySelector('.popup-window');
   win.style.top = `${80 + offset}px`;
   win.style.left = `${80 + offset}px`;
@@ -32,7 +33,7 @@ export async function init(container, app, offset = 0) {
 
   // load the actual app (its own html/css/js) into this window's body
   const body = win.querySelector('.popup-body');
-  await loadWidget(app.path, body);
+  await loadWidget(app.path, body, { initArgs: appInitArgs });
 }
 
 function activate(win, container) {

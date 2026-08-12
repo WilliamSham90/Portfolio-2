@@ -1,45 +1,73 @@
+import { listFolders, fileAppIntoFolder } from '../../folders.js';
+
 const STORAGE_KEY = 'os-app-grid-slots-v1';
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag, not a tap
 
 /**
  * Called by loader.js after this widget's HTML is mounted.
  * @param {HTMLElement} container  this widget's own root element
- * @param {Array<{id:string,name:string,icon:string}>} apps
+ * @param {Array<{id:string,name:string,icon:string}>} apps  every installed app
  */
 export function init(container, apps) {
   const grid = container.querySelector('.app-grid');
-  const elsByAppId = new Map();
 
   const ctx = {
     grid,
-    apps,
-    elsByAppId,
-    slotMap: loadSlots(apps),
+    apps, // the full install list — filed-into-a-folder apps just don't get rendered
+    items: [],
+    elsByAppId: new Map(),
+    slotMap: {},
     highlight: document.createElement('div'),
   };
   ctx.highlight.className = 'drop-highlight';
   grid.appendChild(ctx.highlight);
 
-  for (const app of apps) {
-    const btn = document.createElement('button');
-    btn.className = 'app-icon';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', `Open ${app.name}`);
-    btn.innerHTML = `
-      <span class="app-icon-glyph">${app.icon}</span>
-      <span class="app-icon-label">${app.name}</span>
-    `;
-    grid.appendChild(btn);
-    elsByAppId.set(app.id, btn);
-    makeIconDraggable(btn, app, ctx);
-  }
+  render(ctx);
 
-  layout(ctx);
+  // a folder being created/filed/emptied (from this window or a File
+  // Explorer window) means the desktop's own icon set has changed
+  document.addEventListener('os:folders-changed', () => render(ctx));
 
   // reflow (column count can change) whenever the grid is resized — window
   // resize, orientation change, sidebar toggling, etc.
   const resizeObserver = new ResizeObserver(() => layout(ctx));
   resizeObserver.observe(grid);
+}
+
+/* ---------- what's actually on the desktop right now ---------- */
+
+function visibleItems(ctx) {
+  const folders = listFolders();
+  const filedAppIds = new Set(folders.flatMap((f) => f.appIds));
+  const appItems = ctx.apps
+    .filter((app) => !filedAppIds.has(app.id))
+    .map((app) => ({ kind: 'app', id: app.id, name: app.name, icon: app.icon }));
+  const folderItems = folders.map((f) => ({ kind: 'folder', id: f.id, name: f.name, icon: f.icon }));
+  return [...appItems, ...folderItems];
+}
+
+function render(ctx) {
+  ctx.items = visibleItems(ctx);
+  ctx.slotMap = loadSlots(ctx.items);
+
+  for (const el of ctx.grid.querySelectorAll('.app-icon')) el.remove();
+  ctx.elsByAppId.clear();
+
+  for (const item of ctx.items) {
+    const btn = document.createElement('button');
+    btn.className = 'app-icon';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', item.kind === 'folder' ? `Open folder ${item.name}` : `Open ${item.name}`);
+    btn.innerHTML = `
+      <span class="app-icon-glyph">${item.icon}</span>
+      <span class="app-icon-label">${item.name}</span>
+    `;
+    ctx.grid.appendChild(btn);
+    ctx.elsByAppId.set(item.id, btn);
+    makeIconDraggable(btn, item, ctx);
+  }
+
+  layout(ctx);
 }
 
 /* ---------- grid geometry ---------- */
@@ -53,11 +81,12 @@ function metrics(ctx) {
   const innerWidth = rect.width - pad * 2;
   const innerHeight = rect.height - pad * 2;
   const cols = Math.max(1, Math.floor((innerWidth + gap) / (cell + gap)));
-  // rows = however many actually fit on screen (now that .app-grid fills the
-  // desktop), never fewer than what's needed to hold every app — so a couple
-  // of icons on a wide, tall desktop can still be dragged into any row, not
-  // just shuffled sideways within the one row they'd otherwise be confined to
-  const minRows = Math.max(1, Math.ceil(ctx.apps.length / cols));
+  // rows = however many actually fit on screen (.app-grid fills the whole
+  // desktop), never fewer than what's needed to hold every item — so a
+  // couple of icons on a wide, tall desktop can still be dragged into any
+  // row, not just shuffled sideways within the one row they'd otherwise be
+  // confined to
+  const minRows = Math.max(1, Math.ceil(ctx.items.length / cols));
   const rows = Math.max(minRows, Math.floor((innerHeight + gap) / (cell + gap)));
   return { cell, gap, pad, cols, rows, rect };
 }
@@ -77,16 +106,13 @@ function placeElAt(el, slot, cols) {
 
 function layout(ctx) {
   const { cols } = metrics(ctx);
-  for (const app of ctx.apps) {
-    placeElAt(ctx.elsByAppId.get(app.id), ctx.slotMap[app.id], cols);
+  for (const item of ctx.items) {
+    placeElAt(ctx.elsByAppId.get(item.id), ctx.slotMap[item.id], cols);
   }
 }
 
-function appIdAtSlot(ctx, slot, excludeAppId) {
-  for (const app of ctx.apps) {
-    if (app.id !== excludeAppId && ctx.slotMap[app.id] === slot) return app.id;
-  }
-  return null;
+function itemAtSlot(ctx, slot, excludeId) {
+  return ctx.items.find((item) => item.id !== excludeId && ctx.slotMap[item.id] === slot) ?? null;
 }
 
 /* ---------- the (invisible-until-dragging) drop highlight ---------- */
@@ -129,9 +155,18 @@ function flip(el, mutate) {
   });
 }
 
-/* ---------- dragging an icon to reposition it ---------- */
+/* ---------- fading an icon out when it's filed into a folder ---------- */
 
-function makeIconDraggable(el, app, ctx) {
+function fadeOut(el) {
+  el.style.transition = 'opacity 0.15s ease, scale 0.15s ease';
+  el.style.pointerEvents = 'none';
+  el.style.opacity = '0';
+  el.style.scale = '0.7';
+}
+
+/* ---------- dragging an icon to reposition it (or file it into a folder) ---------- */
+
+function makeIconDraggable(el, item, ctx) {
   let pointerId = null;
   let dragging = false;
   let suppressClick = false;
@@ -175,7 +210,7 @@ function makeIconDraggable(el, app, ctx) {
       if (Math.hypot(moveX, moveY) < DRAG_THRESHOLD) return;
       dragging = true;
       m = metrics(ctx);
-      originSlot = ctx.slotMap[app.id];
+      originSlot = ctx.slotMap[item.id];
       el.classList.add('is-dragging');
       document.body.style.userSelect = 'none';
     }
@@ -188,10 +223,10 @@ function makeIconDraggable(el, app, ctx) {
     if (slot !== hoveredSlot) {
       hoveredSlot = slot;
       clearSwapTarget();
-      const occupantId = appIdAtSlot(ctx, slot, app.id);
-      showHighlight(ctx, row, col, m, Boolean(occupantId));
-      if (occupantId) {
-        swapTargetEl = ctx.elsByAppId.get(occupantId);
+      const occupant = itemAtSlot(ctx, slot, item.id);
+      showHighlight(ctx, row, col, m, Boolean(occupant));
+      if (occupant) {
+        swapTargetEl = ctx.elsByAppId.get(occupant.id);
         swapTargetEl.classList.add('is-swap-target');
       }
     }
@@ -208,7 +243,7 @@ function makeIconDraggable(el, app, ctx) {
     try { el.releasePointerCapture(event.pointerId); } catch { /* already released */ }
     document.body.style.userSelect = '';
 
-    if (!dragging) return; // it was just a tap — let the click handler open the app
+    if (!dragging) return; // it was just a tap — let the click handler open it
 
     dragging = false;
     suppressClick = true;
@@ -223,17 +258,30 @@ function makeIconDraggable(el, app, ctx) {
     const cols = m.cols;
 
     if (targetSlot !== originSlot) {
-      const occupantId = appIdAtSlot(ctx, targetSlot, app.id);
-      if (occupantId) {
-        const occupantEl = ctx.elsByAppId.get(occupantId);
+      const occupant = itemAtSlot(ctx, targetSlot, item.id);
+
+      if (occupant && item.kind === 'app' && occupant.kind === 'folder') {
+        // drop an app onto a folder: file it away instead of swapping.
+        // fileAppIntoFolder() triggers a full re-render synchronously (via
+        // folders.js's change event), which would yank `el` out of the DOM
+        // mid-transition — so let the fade actually play first, then file it.
+        fadeOut(el);
+        hoveredSlot = null;
+        m = null;
+        setTimeout(() => fileAppIntoFolder(item.id, occupant.id), 150);
+        return;
+      }
+
+      if (occupant) {
+        const occupantEl = ctx.elsByAppId.get(occupant.id);
         flip(occupantEl, () => {
-          ctx.slotMap[occupantId] = originSlot;
+          ctx.slotMap[occupant.id] = originSlot;
           placeElAt(occupantEl, originSlot, cols);
         });
       }
       flip(el, () => {
         el.style.transform = '';
-        ctx.slotMap[app.id] = targetSlot;
+        ctx.slotMap[item.id] = targetSlot;
         placeElAt(el, targetSlot, cols);
       });
     } else {
@@ -255,7 +303,8 @@ function makeIconDraggable(el, app, ctx) {
       event.stopPropagation();
       return;
     }
-    document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id: app.id } }));
+    const eventName = item.kind === 'folder' ? 'os:open-folder' : 'os:launch-app';
+    document.dispatchEvent(new CustomEvent(eventName, { detail: { id: item.id } }));
   });
 }
 
@@ -263,9 +312,9 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-/* ---------- persistence: which slot each app icon is parked in ---------- */
+/* ---------- persistence: which slot each icon is parked in ---------- */
 
-function loadSlots(apps) {
+function loadSlots(items) {
   let saved = {};
   try {
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
@@ -276,19 +325,19 @@ function loadSlots(apps) {
   const used = new Set();
   const slots = {};
 
-  for (const app of apps) {
-    const slot = saved[app.id];
+  for (const item of items) {
+    const slot = saved[item.id];
     if (Number.isInteger(slot) && slot >= 0 && !used.has(slot)) {
-      slots[app.id] = slot;
+      slots[item.id] = slot;
       used.add(slot);
     }
   }
 
   let next = 0;
-  for (const app of apps) {
-    if (slots[app.id] === undefined) {
+  for (const item of items) {
+    if (slots[item.id] === undefined) {
       while (used.has(next)) next++;
-      slots[app.id] = next;
+      slots[item.id] = next;
       used.add(next);
     }
   }

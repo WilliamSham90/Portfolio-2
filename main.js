@@ -8,9 +8,10 @@
 import { loadWidget } from './loader.js';
 import { initTheme } from './theme.js';
 
-const APPS = [
+export const APPS = [
   { id: 'hello-world', name: 'Hello There', icon: '👋', path: './apps/hello-world/' },
   { id: 'themes', name: 'Themes', icon: '🎨', path: './apps/themes/' },
+  { id: 'my-computer', name: 'My Computer', icon: '🖥️', path: './apps/file-explorer/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -32,6 +33,13 @@ async function boot() {
     if (app) openApp(app);
   });
 
+  // whenever a folder icon is clicked, open My Computer's app (the File
+  // Explorer) straight into that folder instead of its default root view
+  document.addEventListener('os:open-folder', (event) => {
+    const app = APPS.find((a) => a.id === 'my-computer');
+    if (app) openApp(app, [event.detail.id]);
+  });
+
   // 3. a popup tells us whenever it's been clicked/focused, so we can
   //    highlight the matching taskbar tab
   document.addEventListener('popup:activated', (event) => {
@@ -49,7 +57,7 @@ async function boot() {
 
 let openCount = 0;
 
-async function openApp(app) {
+async function openApp(app, appInitArgs = []) {
   const popupLayer = document.getElementById('popup-layer');
 
   // each open app gets its own popup instance, offset slightly so
@@ -58,7 +66,7 @@ async function openApp(app) {
 
   const { root } = await loadWidget('./widget/popup/', popupLayer, {
     multiple: true,
-    initArgs: [app, offset],
+    initArgs: [app, offset, appInitArgs],
   });
 
   const tab = createTaskbarTab(app, root);

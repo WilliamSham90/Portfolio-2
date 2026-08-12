@@ -10,6 +10,13 @@ app can reference it, instead of every app keeping its own copies.
 - `pdf/` — documents
 - `videos/` — video files
 
+Adding a file here makes it *findable*, not automatically *visible* — the
+File Explorer app can't ask a static server "what's in this folder" (no
+backend, no directory listing), so it reads `assets/manifest.js` instead.
+Drop a file in the right subfolder, then add one line to that manifest
+(see the comments in the file, or root README > "Folders") so it shows up
+in the Explorer too.
+
 ## Referencing a file from here
 
 Where the path needs to be written *relative to* depends on what kind of

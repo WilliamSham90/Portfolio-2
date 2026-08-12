@@ -9,6 +9,7 @@ Portfolio/
 ├── main.js                  the "kernel": app registry, boots widgets, wires the taskbar
 ├── loader.js                shared engine used by everything below (see next section)
 ├── theme.js                  the "theme kernel" — applies a theme's colors/font to :root
+├── folders.js                the "folders kernel" — desktop folders are virtual (see "Folders")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -20,6 +21,7 @@ Portfolio/
 │   └── krystal-core.js
 │
 ├── assets/                  shared media the whole OS can use (see "Assets")
+│   ├── manifest.js           registry of files the File Explorer can browse
 │   ├── images/
 │   ├── music/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
@@ -41,7 +43,11 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── themes/                 lets the user pick a theme (see below)
+    ├── themes/                 lets the user pick a theme (see "Theming")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    └── file-explorer/           "My Computer" — browses folders + /assets (see "Folders")
         ├── index.html
         ├── index.css
         └── index.js
@@ -144,6 +150,45 @@ and app's `index.html` into the one real page, a relative path behaves
 differently depending on where it's written from (CSS vs. HTML vs. JS).
 `assets/README.md` has the full breakdown and examples — read it before
 wiring up the first image/font/audio reference from inside a widget/app.
+
+`assets/manifest.js` is a separate, related thing: the list of files the
+**File Explorer app** can browse (see "Folders" below). A static site has
+no way to ask "what's in this folder", so — same as `APPS` in `main.js` —
+files are listed by hand rather than discovered automatically.
+
+## Folders
+
+Desktop folders and the File Explorer ("My Computer") work together:
+
+- A folder is virtual — `{id, name, icon, appIds}` — since this is a
+  static site with no backend to create a real one on disk. `folders.js`
+  (root-level, same shared-kernel pattern as `theme.js`) is the only
+  thing that reads/writes them, via `localStorage`. Any change fires
+  `os:folders-changed` on `document`, so the desktop and every open File
+  Explorer window can re-render themselves.
+- Folders live as regular icons on the desktop grid, right alongside
+  apps — `widget/app-grid` asks `folders.js` for the current list and
+  draws them with the exact same draggable/swappable icon it already
+  uses for apps (see "Icon grid" below). Clicking one fires
+  `os:open-folder` instead of `os:launch-app`; `main.js` catches that and
+  opens **My Computer** straight into that folder.
+- **Filing an app away**: drag an app icon and drop it *onto* a folder
+  icon (same drag system as reordering — dropping onto an occupied cell
+  already means "something happens here", this is just the folder case
+  of that). The app fades out and disappears from the desktop; it's now
+  only reachable from inside that folder. Each folder's view in the
+  Explorer lists what's inside with a small ✕ to move an app back out.
+- **My Computer** is a completely ordinary app (`apps/file-explorer/`,
+  in `APPS` like any other) — draggable, filable into a folder, etc. Its
+  root view ("This PC") lists your folders plus a read-only `assets/`
+  library (Images/Music/Videos/PDF/Fonts, from `assets/manifest.js`).
+  Clicking a PDF/image/audio/video file opens it in a new tab and lets
+  the browser's own viewer handle it — no custom player yet. **Fonts**
+  just lists the family names (nothing to open — see "Theme fonts").
+- Deliberately out of scope for now (all easy to add later, on top of
+  the same pieces above): nested folders, renaming a folder, and the
+  custom-skinned music/image/video players — those need their own
+  focused design pass rather than being rushed in here.
 
 ## Adding a new app later
 

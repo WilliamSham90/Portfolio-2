@@ -1,0 +1,129 @@
+@scope (.explorer-app) {
+  :scope {
+    padding: 16px 18px 20px;
+    font-family: var(--font-main);
+    min-width: 300px;
+    max-width: 460px;
+  }
+
+  .explorer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .explorer-back {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.35);
+    color: var(--win-text);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .explorer-back:hover,
+  .explorer-back:focus-visible {
+    background: rgba(255,255,255,0.55);
+    outline: none;
+  }
+  .explorer-back:disabled {
+    visibility: hidden;
+  }
+
+  .explorer-path {
+    font: var(--fs-sm) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.75;
+    letter-spacing: 0.5px;
+  }
+
+  .explorer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .explorer-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .explorer-row-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.28);
+    color: var(--win-text);
+    text-align: left;
+    cursor: pointer;
+    font: var(--fs-base) var(--font-main);
+  }
+  .explorer-row-main:hover,
+  .explorer-row-main:focus-visible {
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(0,0,0,0.12);
+    outline: none;
+  }
+
+  .explorer-row.is-action .explorer-row-main {
+    border: 1px dashed rgba(0,0,0,0.3);
+    background: transparent;
+    color: var(--win-text);
+    opacity: 0.85;
+  }
+
+  .explorer-row-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .explorer-row-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .explorer-row-remove {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--win-text);
+    opacity: 0.45;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .explorer-row-remove:hover,
+  .explorer-row-remove:focus-visible {
+    opacity: 1;
+    background: rgba(0,0,0,0.1);
+    outline: none;
+  }
+
+  .explorer-empty {
+    margin: 10px 4px;
+    font: var(--fs-sm) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.6;
+    line-height: 1.5;
+  }
+}
