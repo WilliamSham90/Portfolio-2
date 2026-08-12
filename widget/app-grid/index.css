@@ -1,10 +1,15 @@
 @scope (.app-grid) {
   :scope {
+    --cell-size: 84px;
+    --cell-gap: 18px;
+    --grid-pad: 28px;
+
+    position: relative; /* positioning context for the drop-highlight */
     display: grid;
-    grid-template-columns: repeat(auto-fill, 84px);
-    grid-auto-rows: 84px;
-    gap: 18px;
-    padding: 28px;
+    grid-template-columns: repeat(auto-fill, var(--cell-size));
+    grid-auto-rows: var(--cell-size);
+    gap: var(--cell-gap);
+    padding: var(--grid-pad);
     align-content: start;
   }
 
@@ -17,9 +22,10 @@
     border: 1px solid transparent;
     border-radius: var(--radius);
     background: transparent;
-    cursor: pointer;
+    cursor: grab;
     padding: 8px 4px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    touch-action: none; /* so dragging on mobile doesn't also scroll the page */
+    transition: background 0.15s ease, border-color 0.15s ease, scale 0.15s ease, box-shadow 0.15s ease;
   }
 
   .app-icon:hover,
@@ -27,6 +33,26 @@
     background: var(--glass);
     border-color: var(--glass-border);
     outline: none;
+  }
+
+  /* while dragging, the icon lifts off the grid and follows the pointer.
+     JS drives translation via inline `transform`; `scale` is a separate
+     standalone CSS property so it composes with that transform instead of
+     fighting it for the same declaration. */
+  .app-icon.is-dragging {
+    cursor: grabbing;
+    background: var(--glass);
+    border-color: var(--glass-border);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.38), 0 0 22px rgba(255,111,168,0.30);
+    scale: 1.08;
+    z-index: 30;
+  }
+
+  /* the icon currently occupying the cell a drag is hovering over —
+     signals "drop here to swap" */
+  .app-icon.is-swap-target {
+    border-color: var(--hotrose);
+    background: var(--glass);
   }
 
   .app-icon-glyph {
@@ -40,5 +66,31 @@
     color: var(--text-soft);
     text-align: center;
     letter-spacing: 0.5px;
+  }
+
+  /* the grid itself stays invisible at all times; this is the only visual
+     trace of it, and only while a drag is in flight, over a valid cell */
+  .drop-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: var(--radius);
+    border: 2px dashed var(--glass-border);
+    background: var(--glass);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    transition: transform 0.12s ease, opacity 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  }
+
+  .drop-highlight.is-visible {
+    opacity: 1;
+  }
+
+  .drop-highlight.is-swap {
+    border-style: solid;
+    border-color: var(--hotrose);
   }
 }

@@ -53,10 +53,10 @@ function makeDraggable(win, handle) {
   let startX = 0, startY = 0;
   let originLeft = 0, originTop = 0;
   let dx = 0, dy = 0;
-  let frameRequested = false;
+  let rafId = null;
 
   const applyFrame = () => {
-    frameRequested = false;
+    rafId = null;
     win.style.transform = `translate(${dx}px, ${dy}px)`;
   };
 
@@ -78,15 +78,23 @@ function makeDraggable(win, handle) {
     if (!dragging) return;
     dx = event.clientX - startX;
     dy = event.clientY - startY;
-    if (!frameRequested) {
-      frameRequested = true;
-      requestAnimationFrame(applyFrame);
+    if (rafId === null) {
+      rafId = requestAnimationFrame(applyFrame);
     }
   });
 
   const endDrag = (event) => {
     if (!dragging) return;
     dragging = false;
+    // a pointermove right before release can leave a frame queued; without
+    // cancelling it here, that stale frame fires on the next paint (after
+    // left/top have already been baked below) and re-applies the old
+    // transform on top of the new position — the "jumps somewhere else on
+    // release" bug.
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
     handle.classList.remove('is-dragging');
     handle.releasePointerCapture(event.pointerId);
     document.body.style.userSelect = '';
