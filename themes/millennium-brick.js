@@ -4,8 +4,8 @@ export default {
   name: 'Millennium Brick',
   fonts: {
     display: {
-      family: 'Chakra Petch',
-      fallback: "'Trebuchet MS', Arial, sans-serif",
+      family: 'Space Mono',
+      fallback: "'Courier New', monospace",
       files: [
         { weight: 400, style: 'normal' },
         { weight: 700, style: 'normal' },

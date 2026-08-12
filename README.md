@@ -12,13 +12,19 @@ Portfolio/
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
-│   ├── fonts/                 (you add the actual font files here — see "Theme fonts")
 │   ├── dial-up-dream.js       default theme
 │   ├── millennium-brick.js
 │   ├── fated-dusk.js
 │   ├── red-october.js
 │   ├── paradise-protocol.js
 │   └── krystal-core.js
+│
+├── assets/                  shared media the whole OS can use (see "Assets")
+│   ├── images/
+│   ├── music/
+│   ├── fonts/                (theme font files go here — see "Theme fonts")
+│   ├── pdf/
+│   └── videos/
 │
 ├── widget/
 │   ├── app-grid/             icon grid widget — sits on top of the desktop
@@ -100,31 +106,44 @@ is that those values can be swapped as a set at runtime:
 
 ### Theme fonts
 
-Font files aren't bundled (no license to redistribute them), so on a
-fresh checkout every theme just falls back to a safe system font — the OS
-still looks right, just less distinctive. `themes/fonts.css` already has
-the `@font-face` rules wired up; a browser only fetches a font file the
-moment it's actually needed to render text, so it's safe that all six are
-declared up front — only the active theme's font ever downloads.
+Every theme's font is downloaded and in place. `themes/fonts.css` has the
+`@font-face` rules pointing at the exact files below; a browser only
+fetches one the moment it's actually needed to render text, so it's safe
+that all six are declared up front — only the active theme's font ever
+downloads. (Two themes ended up with a different font than originally
+planned, since the exact family wasn't available/downloaded — Millennium
+Brick and Red October below.)
 
-To make a theme use its real font: download the family (all free on
-[Google Fonts](https://fonts.google.com)), and drop the files into
-`themes/fonts/<family-slug>/<family-slug>-<weight>.woff2` (a `.ttf` next
-to it works too — `fonts.css` tries `.woff2` first, falls back to `.ttf`).
-
-| Theme | Font | Weights needed | Folder |
+| Theme | Font | Weights used | Folder |
 |---|---|---|---|
-| Dial-Up Dream | Quicksand | 400, 700 | `themes/fonts/quicksand/` |
-| Millennium Brick | Chakra Petch | 400, 700 | `themes/fonts/chakra-petch/` |
-| Fated Dusk | Cinzel | 400, 700 | `themes/fonts/cinzel/` |
-| Red October | Bebas Neue | 400 only (it has no bold) | `themes/fonts/bebas-neue/` |
-| Paradise Protocol | Space Grotesk | 400, 700 | `themes/fonts/space-grotesk/` |
-| Krystal Core | Orbitron | 400, 700 | `themes/fonts/orbitron/` |
+| Dial-Up Dream | Quicksand | 400, 700 | `assets/fonts/Quicksand/` |
+| Millennium Brick | Space Mono | 400, 700 | `assets/fonts/SpaceMono/` |
+| Fated Dusk | Cinzel | 400, 700 | `assets/fonts/cinzel/` |
+| Red October | Architects Daughter | 400 only (it has no bold) | `assets/fonts/ArchitectsDaughter/` |
+| Paradise Protocol | Space Grotesk | 400, 700 | `assets/fonts/SpaceGrotesk/` |
+| Krystal Core | Orbitron | 400, 700 | `assets/fonts/orbitron/` |
 
-e.g. for Dial-Up Dream you'd end up with
-`themes/fonts/quicksand/quicksand-400.woff2` and
-`themes/fonts/quicksand/quicksand-700.woff2`. That's it — no code changes,
-`fonts.css` already points at those exact paths.
+Folder casing matters and is inconsistent on purpose — it's whatever each
+family's download actually used (`cinzel`/`orbitron` lowercase,
+`Quicksand`/`SpaceGrotesk`/`SpaceMono`/`ArchitectsDaughter` not). Windows
+won't notice a mismatch here, but GitHub Pages (Linux) will 404, so if
+you re-download or rename a family, keep `fonts.css`'s `url(...)` paths
+byte-for-byte matched to the real folder/file names.
+
+To add a 7th theme's font (or swap one of these): drop the `.ttf` (or
+`.woff2`) files anywhere under `assets/fonts/`, add matching `@font-face`
+rules to `themes/fonts.css`, and point that theme's `fonts.display.family`
+(in its file under `/themes`) at the family name you used.
+
+## Assets
+
+`assets/` is shared media any widget or app can use — `images/`, `music/`,
+`fonts/`, `pdf/`, `videos/`. Each subfolder has its own short README.
+The one thing worth knowing: because `loader.js` inlines every widget's
+and app's `index.html` into the one real page, a relative path behaves
+differently depending on where it's written from (CSS vs. HTML vs. JS).
+`assets/README.md` has the full breakdown and examples — read it before
+wiring up the first image/font/audio reference from inside a widget/app.
 
 ## Adding a new app later
 
@@ -148,9 +167,12 @@ clicking `index.html` will not work.
 1. Create a new **public** repository on github.com (Pages' free tier requires public).
 2. On the repo page: **Add file → Upload files**, then drag in everything
    *inside* the `Portfolio` folder (`index.html`, `main.css`, `main.js`,
-   `loader.js`, the `widget/` folder, the `apps/` folder) — not the
-   `Portfolio` folder itself, its contents, so `index.html` ends up at
-   the repo root. Commit the changes.
+   `loader.js`, `theme.js`, and the `widget/`, `apps/`, `themes/` and
+   `assets/` folders) — not the `Portfolio` folder itself, its contents,
+   so `index.html` ends up at the repo root. Commit the changes. (Git
+   can't track a truly empty folder, so if one of the `assets/`
+   subfolders is still empty, it just won't appear on GitHub until it has
+   a file in it — that's normal, nothing to fix.)
 3. Go to **Settings → Pages**. Under "Build and deployment", set
    **Source: Deploy from a branch**, branch **main**, folder **/(root)**. Save.
 4. Wait about a minute, then visit `https://<your-username>.github.io/<repo-name>/`.

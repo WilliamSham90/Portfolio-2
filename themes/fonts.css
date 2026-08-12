@@ -6,11 +6,11 @@
    listing all six here costs nothing extra: only the active theme's
    font is ever downloaded.
 
-   None of these files ship in the repo (no font licenses bundled here).
-   Until you add them, every theme just falls back to its `fallback` font
-   stack (see the matching file in /themes) — nothing breaks, it just
-   won't look as distinctive yet. See README.md > "Theme fonts" for the
-   exact download + folder instructions.
+   Files live in /assets/fonts, one subfolder per family (see
+   assets/README.md). Paths below match those folders' actual names
+   exactly, including case — GitHub Pages (Linux) is case-sensitive even
+   though Windows isn't, so a casing mismatch here would work locally and
+   404 once deployed.
    ===================================================================== */
 
 @font-face {
@@ -18,33 +18,29 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/quicksand/quicksand-400.woff2') format('woff2'),
-       url('./fonts/quicksand/quicksand-400.ttf') format('truetype');
+  src: url('../assets/fonts/Quicksand/Quicksand-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Quicksand';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/quicksand/quicksand-700.woff2') format('woff2'),
-       url('./fonts/quicksand/quicksand-700.ttf') format('truetype');
+  src: url('../assets/fonts/Quicksand/Quicksand-Bold.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'Chakra Petch';
+  font-family: 'Space Mono';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/chakra-petch/chakra-petch-400.woff2') format('woff2'),
-       url('./fonts/chakra-petch/chakra-petch-400.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceMono/SpaceMono-Regular.ttf') format('truetype');
 }
 @font-face {
-  font-family: 'Chakra Petch';
+  font-family: 'Space Mono';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/chakra-petch/chakra-petch-700.woff2') format('woff2'),
-       url('./fonts/chakra-petch/chakra-petch-700.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceMono/SpaceMono-Bold.ttf') format('truetype');
 }
 
 @font-face {
@@ -52,25 +48,22 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/cinzel/cinzel-400.woff2') format('woff2'),
-       url('./fonts/cinzel/cinzel-400.ttf') format('truetype');
+  src: url('../assets/fonts/cinzel/Cinzel-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Cinzel';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/cinzel/cinzel-700.woff2') format('woff2'),
-       url('./fonts/cinzel/cinzel-700.ttf') format('truetype');
+  src: url('../assets/fonts/cinzel/Cinzel-Bold.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'Bebas Neue';
+  font-family: 'Architects Daughter';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/bebas-neue/bebas-neue-400.woff2') format('woff2'),
-       url('./fonts/bebas-neue/bebas-neue-400.ttf') format('truetype');
+  src: url('../assets/fonts/ArchitectsDaughter/ArchitectsDaughter-Regular.ttf') format('truetype');
 }
 
 @font-face {
@@ -78,16 +71,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/space-grotesk/space-grotesk-400.woff2') format('woff2'),
-       url('./fonts/space-grotesk/space-grotesk-400.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Space Grotesk';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/space-grotesk/space-grotesk-700.woff2') format('woff2'),
-       url('./fonts/space-grotesk/space-grotesk-700.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf') format('truetype');
 }
 
 @font-face {
@@ -95,14 +86,12 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./fonts/orbitron/orbitron-400.woff2') format('woff2'),
-       url('./fonts/orbitron/orbitron-400.ttf') format('truetype');
+  src: url('../assets/fonts/orbitron/Orbitron-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Orbitron';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/orbitron/orbitron-700.woff2') format('woff2'),
-       url('./fonts/orbitron/orbitron-700.ttf') format('truetype');
+  src: url('../assets/fonts/orbitron/Orbitron-Bold.ttf') format('truetype');
 }

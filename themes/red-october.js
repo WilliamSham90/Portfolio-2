@@ -4,8 +4,8 @@ export default {
   name: 'Red October',
   fonts: {
     display: {
-      family: 'Bebas Neue',
-      fallback: "Impact, 'Arial Narrow', sans-serif",
+      family: 'Architects Daughter',
+      fallback: "'Segoe Print', 'Comic Sans MS', cursive",
       files: [
         { weight: 400, style: 'normal' },
       ],
