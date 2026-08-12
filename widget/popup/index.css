@@ -25,6 +25,12 @@
     font: var(--fs-sm) var(--font-mono);
     letter-spacing: 1px;
     color: var(--text);
+    cursor: grab;
+    touch-action: none; /* so dragging on mobile doesn't also scroll the page */
+    user-select: none;
+  }
+  .popup-titlebar.is-dragging {
+    cursor: grabbing;
   }
 
   .popup-close {

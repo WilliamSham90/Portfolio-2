@@ -125,7 +125,7 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 14px;
   padding: 0 18px;
   background: rgba(20,14,20,0.7);
   backdrop-filter: blur(14px);
@@ -136,9 +136,52 @@ body {
 }
 
 #taskbar-brand {
+  flex-shrink: 0;
   color: var(--text);
 }
 
 #taskbar-clock {
+  flex-shrink: 0;
   color: var(--text-muted);
+}
+
+/* one button per open window, appended/removed by main.js */
+#taskbar-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#taskbar-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.taskbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: var(--glass);
+  color: var(--text-soft);
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.taskbar-tab:hover,
+.taskbar-tab:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+.taskbar-tab.is-active {
+  color: var(--text);
+  border-color: var(--pearl);
+  background: linear-gradient(90deg, rgba(255,111,168,0.4), rgba(167,241,234,0.3));
 }

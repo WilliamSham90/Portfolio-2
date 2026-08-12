@@ -91,13 +91,25 @@ If you ever want faster local iteration without pushing every change,
 installing VS Code + its free "Live Server" extension (one click, no
 command line) is the standard way — but it's optional, not required.
 
+## Windows: dragging + taskbar tabs
+
+- `widget/popup/index.js` makes each window's titlebar draggable with
+  Pointer Events. While dragging it moves via a CSS `transform` (cheap
+  for the browser — no layout/paint per pixel), and only "bakes" that
+  into real `left`/`top` on release. Dragging is clamped so a window can
+  never end up partially off-screen or hidden behind the taskbar.
+- Clicking anywhere on a window (or its taskbar tab) raises its z-index
+  above every other window and fires a `popup:activated` event.
+- `main.js` listens for that event and keeps one `.taskbar-tab` button in
+  `#taskbar-tabs` per open window, highlighting whichever one is active
+  and removing the tab automatically when that window is closed.
+
 ## Roadmap (not built yet, on purpose)
 
 - **Mobile OS mode**: `main.css` already isolates all sizing into tokens
   and the shell is a single flex column, so a mobile layout can likely be
   a second stylesheet + a small breakpoint/JS check later, without
   touching any widget or app.
-- **Drag-to-move windows**: skipped for now to keep the first pass small;
-  `widget/popup/index.js` is the one place to add it.
-- **Taskbar app buttons / open-window list**: `#taskbar` is currently just
-  a label and clock, ready for more once there's more than one app.
+- **Minimize**: clicking a window's own taskbar tab currently just
+  refocuses it. Making it toggle hide/show when the window is already
+  active would be the natural next step, in `main.js`'s tab click handler.

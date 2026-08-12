@@ -12,6 +12,9 @@ const APPS = [
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
+// tracks every currently-open window: popup root element -> its taskbar tab
+const openWindows = new Map();
+
 async function boot() {
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');
@@ -23,7 +26,13 @@ async function boot() {
     if (app) openApp(app);
   });
 
-  // 3. taskbar clock
+  // 3. a popup tells us whenever it's been clicked/focused, so we can
+  //    highlight the matching taskbar tab
+  document.addEventListener('popup:activated', (event) => {
+    setActiveTab(event.target);
+  });
+
+  // 4. taskbar clock
   const clockEl = document.getElementById('taskbar-clock');
   const tick = () => {
     clockEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -46,8 +55,39 @@ async function openApp(app) {
     initArgs: [app, offset],
   });
 
-  // if the user closes the window, forget about its DOM node
-  root.addEventListener('popup:closed', () => root.remove(), { once: true });
+  const tab = createTaskbarTab(app, root);
+  openWindows.set(root, tab);
+  setActiveTab(root);
+
+  // if the user closes the window, clean up both its DOM node and its tab
+  root.addEventListener('popup:closed', () => {
+    root.remove();
+    tab.remove();
+    openWindows.delete(root);
+  }, { once: true });
+}
+
+function createTaskbarTab(app, popupRoot) {
+  const tabs = document.getElementById('taskbar-tabs');
+
+  const tab = document.createElement('button');
+  tab.type = 'button';
+  tab.className = 'taskbar-tab';
+  tab.innerHTML = `<span class="taskbar-tab-icon">${app.icon}</span><span class="taskbar-tab-label">${app.name}</span>`;
+
+  // clicking the tab asks that specific popup to bring itself to front
+  tab.addEventListener('click', () => {
+    popupRoot.dispatchEvent(new CustomEvent('popup:focus'));
+  });
+
+  tabs.appendChild(tab);
+  return tab;
+}
+
+function setActiveTab(activeRoot) {
+  for (const [root, tab] of openWindows) {
+    tab.classList.toggle('is-active', root === activeRoot);
+  }
 }
 
 boot();
