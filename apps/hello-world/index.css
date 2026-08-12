@@ -1,0 +1,28 @@
+@scope (.hello-app) {
+  :scope {
+    padding: 32px 28px;
+    text-align: center;
+    font-family: var(--font-main);
+  }
+
+  .hello-text {
+    margin: 0 0 18px;
+    font: var(--fs-lg) var(--font-accent);
+    color: var(--win-title);
+  }
+
+  .hello-btn {
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 999px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, var(--btn-bg), var(--btn-bg2) 50%, var(--btn-bg3));
+    color: var(--btn-text);
+    font: var(--fs-sm) var(--font-mono);
+    cursor: pointer;
+  }
+  .hello-btn:hover,
+  .hello-btn:focus-visible {
+    filter: brightness(1.05);
+    outline: none;
+  }
+}

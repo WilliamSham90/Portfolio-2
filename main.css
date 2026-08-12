@@ -1,0 +1,144 @@
+/* =====================================================================
+   main.css
+   The ONLY place color, font and base-size decisions get made.
+   Every widget/app should style itself using these custom properties
+   (var(--rose), var(--font-mono), etc.) instead of hard-coding values,
+   so the whole "OS" can be re-themed from this one file.
+   ===================================================================== */
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- THEME TOKENS (single source of truth — edit here only) ---------- */
+:root {
+  /* palette */
+  --pearl:     #fff8fc;
+  --rose:      #ffb7ce;
+  --hotrose:   #ff6fa8;
+  --aqua:      #a7f1ea;
+  --lilac:     #d6c1ff;
+
+  --text:       #fff9fd;
+  --text-soft:  #ffe7f1;
+  --text-muted: #e8bfce;
+  --text-dark:  #303041;
+
+  --paper:      #fff6fb;
+  --paper-text: #373042;
+
+  --border:        #ffd1df;
+  --border-bright: #fff8fc;
+
+  --btn-bg:   #fff7fc;
+  --btn-bg2:  #ffc5d8;
+  --btn-bg3:  #c7f4f0;
+  --btn-text: #342d3e;
+
+  --win-bg:    #e8e0ec;
+  --win-title: #c85e8a;
+  --win-text:  #24222c;
+
+  --wrap-a: #211820;
+  --wrap-b: #40333d;
+  --wrap-c: #1c171f;
+
+  --glass: linear-gradient(135deg, rgba(255,248,252,0.20), rgba(167,241,234,0.14), rgba(255,183,206,0.16));
+  --glass-border: rgba(255,255,255,0.42);
+
+  /* type */
+  --font-main:   'Trebuchet MS', Arial, sans-serif;
+  --font-mono:   'Courier New', monospace;
+  --font-accent: Georgia, serif;
+
+  --fs-xs:   10px;
+  --fs-sm:   12px;
+  --fs-base: 14px;
+  --fs-md:   16px;
+  --fs-lg:   20px;
+
+  /* layout */
+  --taskbar-height: 52px;
+  --radius: 6px;
+}
+
+body {
+  font-family: var(--font-main);
+  font-size: var(--fs-base);
+  color: var(--text);
+  background: #121212;
+  overflow: hidden; /* an OS desktop doesn't scroll */
+}
+
+/* =====================================================================
+   OS SHELL — this part lives in index.html itself. Everything else
+   (icons, windows, app content) is injected into the empty slots below.
+   ===================================================================== */
+
+#desktop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,111,168,0.24), transparent 34%),
+    radial-gradient(circle at 80% 22%, rgba(167,241,234,0.20), transparent 36%),
+    radial-gradient(circle at 50% 80%, rgba(214,193,255,0.20), transparent 36%),
+    linear-gradient(135deg, var(--wrap-a), var(--wrap-b) 48%, var(--wrap-c));
+}
+
+/* the canvas apps live on, above the wallpaper, below the taskbar */
+#desktop-canvas {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* slot the app-grid widget renders its icons into */
+#app-grid-root {
+  position: absolute;
+  inset: 0;
+}
+
+/* slot popup windows get appended into, one per open app */
+#popup-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* empty layer shouldn't block clicks on the grid */
+}
+#popup-layer > * {
+  pointer-events: auto; /* but an actual open window should */
+}
+
+/* ---------- TASKBAR (bottom, always present) ---------- */
+#taskbar {
+  height: var(--taskbar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: rgba(20,14,20,0.7);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font: var(--fs-sm) var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+#taskbar-brand {
+  color: var(--text);
+}
+
+#taskbar-clock {
+  color: var(--text-muted);
+}
