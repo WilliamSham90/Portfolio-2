@@ -43,7 +43,7 @@
     cursor: grabbing;
     background: var(--glass);
     border-color: var(--glass-border);
-    box-shadow: 0 14px 30px rgba(0,0,0,0.38), 0 0 22px rgba(255,111,168,0.30);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.38), 0 0 22px rgba(var(--hotrose-rgb),0.30);
     scale: 1.08;
     z-index: 30;
   }
@@ -58,7 +58,7 @@
   .app-icon-glyph {
     font-size: 30px;
     line-height: 1;
-    filter: drop-shadow(0 0 10px rgba(255,111,168,0.35));
+    filter: drop-shadow(0 0 10px rgba(var(--hotrose-rgb),0.35));
   }
 
   .app-icon-label {

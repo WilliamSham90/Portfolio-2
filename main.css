@@ -1,9 +1,15 @@
 /* =====================================================================
    main.css
-   The ONLY place color, font and base-size decisions get made.
-   Every widget/app should style itself using these custom properties
-   (var(--rose), var(--font-mono), etc.) instead of hard-coding values,
-   so the whole "OS" can be re-themed from this one file.
+   The ONLY place layout/size decisions get made, and the DEFAULT values
+   for every color + font token (so the page still looks right even
+   before JS runs). Every widget/app should style itself using these
+   custom properties (var(--rose), var(--font-mono), etc.) instead of
+   hard-coding values.
+
+   The actual *theme* — which colors and font these tokens hold — is
+   picked at runtime by theme.js (see /themes): it overwrites these same
+   custom properties on :root, so nothing outside this file needs to
+   know theming exists. Default theme here is "Dial-Up Dream".
    ===================================================================== */
 
 /* ---------- reset ---------- */
@@ -19,46 +25,57 @@ button {
   color: inherit;
 }
 
-/* ---------- THEME TOKENS (single source of truth — edit here only) ---------- */
+/* ---------- THEME TOKENS ----------
+   Default values = the "Dial-Up Dream" theme (themes/dial-up-dream.js).
+   theme.js overwrites all of these (plus the *-rgb triplets, used by the
+   rgba() gradients/glows below) the moment a theme is applied — including
+   on first load, from whatever theme was last saved. Edit here to change
+   what an unthemed page looks like; edit /themes to add or change a
+   theme itself. */
 :root {
   /* palette */
-  --pearl:     #fff8fc;
-  --rose:      #ffb7ce;
-  --hotrose:   #ff6fa8;
-  --aqua:      #a7f1ea;
-  --lilac:     #d6c1ff;
+  --pearl:     #dad4c9;
+  --pearl-rgb: 218, 212, 201;
+  --rose:      #ffd183;
+  --rose-rgb:  255, 209, 131;
+  --hotrose:   #eeb24a;
+  --hotrose-rgb: 238, 178, 74;
+  --aqua:      #5a8bde;
+  --aqua-rgb:  90, 139, 222;
+  --lilac:     #b89ce9;
+  --lilac-rgb: 184, 156, 233;
 
-  --text:       #fff9fd;
-  --text-soft:  #ffe7f1;
-  --text-muted: #e8bfce;
-  --text-dark:  #303041;
+  --text:       #dad4c9;
+  --text-soft:  #deada5;
+  --text-muted: #b89ce9;
+  --text-dark:  #272a32;
 
-  --paper:      #fff6fb;
-  --paper-text: #373042;
+  --paper:      #dad4c9;
+  --paper-text: #272a32;
 
-  --border:        #ffd1df;
-  --border-bright: #fff8fc;
+  --border:        #deada5;
+  --border-bright: #dad4c9;
 
-  --btn-bg:   #fff7fc;
-  --btn-bg2:  #ffc5d8;
-  --btn-bg3:  #c7f4f0;
-  --btn-text: #342d3e;
+  --btn-bg:   #dad4c9;
+  --btn-bg2:  #ffd183;
+  --btn-bg3:  #5a8bde;
+  --btn-text: #272a32;
 
-  --win-bg:    #e8e0ec;
-  --win-title: #c85e8a;
-  --win-text:  #24222c;
+  --win-bg:    #deada5;
+  --win-title: #dc6250;
+  --win-text:  #272a32;
 
-  --wrap-a: #211820;
-  --wrap-b: #40333d;
-  --wrap-c: #1c171f;
+  --wrap-a: #272a32;
+  --wrap-b: #21525a;
+  --wrap-c: #272a32;
 
-  --glass: linear-gradient(135deg, rgba(255,248,252,0.20), rgba(167,241,234,0.14), rgba(255,183,206,0.16));
+  --glass: linear-gradient(135deg, rgba(var(--pearl-rgb),0.20), rgba(var(--aqua-rgb),0.14), rgba(var(--rose-rgb),0.16));
   --glass-border: rgba(255,255,255,0.42);
 
   /* type */
-  --font-main:   'Trebuchet MS', Arial, sans-serif;
+  --font-main:   'Quicksand', 'Trebuchet MS', Arial, sans-serif;
   --font-mono:   'Courier New', monospace;
-  --font-accent: Georgia, serif;
+  --font-accent: 'Quicksand', 'Trebuchet MS', Arial, sans-serif;
 
   --fs-xs:   10px;
   --fs-sm:   12px;
@@ -90,9 +107,9 @@ body {
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 18% 20%, rgba(255,111,168,0.24), transparent 34%),
-    radial-gradient(circle at 80% 22%, rgba(167,241,234,0.20), transparent 36%),
-    radial-gradient(circle at 50% 80%, rgba(214,193,255,0.20), transparent 36%),
+    radial-gradient(circle at 18% 20%, rgba(var(--hotrose-rgb),0.24), transparent 34%),
+    radial-gradient(circle at 80% 22%, rgba(var(--aqua-rgb),0.20), transparent 36%),
+    radial-gradient(circle at 50% 80%, rgba(var(--lilac-rgb),0.20), transparent 36%),
     linear-gradient(135deg, var(--wrap-a), var(--wrap-b) 48%, var(--wrap-c));
 }
 
@@ -183,5 +200,5 @@ body {
 .taskbar-tab.is-active {
   color: var(--text);
   border-color: var(--pearl);
-  background: linear-gradient(90deg, rgba(255,111,168,0.4), rgba(167,241,234,0.3));
+  background: linear-gradient(90deg, rgba(var(--hotrose-rgb),0.4), rgba(var(--aqua-rgb),0.3));
 }

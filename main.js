@@ -6,9 +6,11 @@
    ===================================================================== */
 
 import { loadWidget } from './loader.js';
+import { initTheme } from './theme.js';
 
 const APPS = [
   { id: 'hello-world', name: 'Hello There', icon: '👋', path: './apps/hello-world/' },
+  { id: 'themes', name: 'Themes', icon: '🎨', path: './apps/themes/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -16,6 +18,10 @@ const APPS = [
 const openWindows = new Map();
 
 async function boot() {
+  // 0. apply the saved (or default) theme before anything else mounts,
+  //    so widgets never render with the wrong colors for a frame
+  initTheme();
+
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');
   await loadWidget('./widget/app-grid/', gridRoot, { initArgs: [APPS] });
