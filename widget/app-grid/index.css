@@ -4,7 +4,15 @@
     --cell-gap: 18px;
     --grid-pad: 28px;
 
-    position: relative; /* positioning context for the drop-highlight */
+    /* fill the whole desktop (not just hug the icons), so there's real
+       empty space below/beside them to drag into. `position: absolute` +
+       `inset: 0` rather than `height: 100%`, because the direct parent
+       here is loader.js's unstyled `.widget-instance` wrapper (height:
+       auto) — this resolves against the nearest *positioned* ancestor,
+       `#app-grid-root`, instead, skipping that wrapper. Still doubles as
+       the positioning context for the drop-highlight below. */
+    position: absolute;
+    inset: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, var(--cell-size));
     grid-auto-rows: var(--cell-size);

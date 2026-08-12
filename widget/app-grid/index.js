@@ -51,8 +51,14 @@ function metrics(ctx) {
   const pad = parseFloat(style.getPropertyValue('--grid-pad'));
   const rect = ctx.grid.getBoundingClientRect();
   const innerWidth = rect.width - pad * 2;
+  const innerHeight = rect.height - pad * 2;
   const cols = Math.max(1, Math.floor((innerWidth + gap) / (cell + gap)));
-  const rows = Math.max(1, Math.ceil(ctx.apps.length / cols));
+  // rows = however many actually fit on screen (now that .app-grid fills the
+  // desktop), never fewer than what's needed to hold every app — so a couple
+  // of icons on a wide, tall desktop can still be dragged into any row, not
+  // just shuffled sideways within the one row they'd otherwise be confined to
+  const minRows = Math.max(1, Math.ceil(ctx.apps.length / cols));
+  const rows = Math.max(minRows, Math.floor((innerHeight + gap) / (cell + gap)));
   return { cell, gap, pad, cols, rows, rect };
 }
 
