@@ -7,6 +7,7 @@
 
 import { loadWidget } from './loader.js';
 import { initTheme } from './theme.js';
+import { initContextMenu } from './context-menu.js';
 
 export const APPS = [
   { id: 'hello-world', name: 'Hello There', icon: '👋', path: './apps/hello-world/' },
@@ -22,6 +23,7 @@ async function boot() {
   // 0. apply the saved (or default) theme before anything else mounts,
   //    so widgets never render with the wrong colors for a frame
   initTheme();
+  initContextMenu();
 
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');

@@ -35,6 +35,11 @@
 
   </div>
 
+  <!-- the OS's own right-click menu (context-menu.js). Shift+right-click
+       always falls through to the browser's real one instead — see
+       README.md > "Right-click menu" — so Inspect stays reachable. -->
+  <ul id="context-menu" class="context-menu" role="menu" hidden></ul>
+
   <script type="module" src="./main.js"></script>
 </body>
 </html>

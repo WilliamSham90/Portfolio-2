@@ -10,6 +10,7 @@ Portfolio/
 ├── loader.js                shared engine used by everything below (see next section)
 ├── theme.js                  the "theme kernel" — applies a theme's colors/font to :root
 ├── folders.js                the "folders kernel" — desktop folders are virtual (see "Folders")
+├── context-menu.js           replaces the right-click menu (see "Right-click menu")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -189,6 +190,21 @@ Desktop folders and the File Explorer ("My Computer") work together:
   the same pieces above): nested folders, renaming a folder, and the
   custom-skinned music/image/video players — those need their own
   focused design pass rather than being rushed in here.
+
+## Right-click menu
+
+`context-menu.js` swaps the browser's native right-click menu for the
+OS's own, everywhere on the page — New Folder / My Computer / Settings
+(the last one just opens the Themes app for now; there's no separate
+Settings app yet).
+
+**Shift+right-click still opens the real browser menu** — the handler
+checks `event.shiftKey` and simply doesn't call `preventDefault()` when
+it's held, so the native menu (Inspect, etc.) opens exactly as normal.
+That's the only thing touched; keyboard devtools shortcuts (F12,
+Ctrl+Shift+I) were never intercepted in the first place. To add a menu
+item, add one `{icon, label, run}` entry to the `ITEMS` array at the top
+of `context-menu.js` — same shape as `APPS` in `main.js`.
 
 ## Adding a new app later
 
