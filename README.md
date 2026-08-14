@@ -355,8 +355,11 @@ Ctrl+Shift+I) were never intercepted in the first place.
 
 ## Start menu
 
-`js/start-menu.js` is the taskbar's left-side Start button (`app-store.png`)
-and its dropdown. It's initialized as `initStartMenu(START_MENU_APPS)` from
+`js/start-menu.js` is the taskbar's left-side Start button (`home.png`,
+transparent until hovered/active — a `.taskbar-divider` beside it in
+`index.html` is what actually marks the split from the open-window tabs,
+now that the button has no resting-state border/background of its own to
+imply it) and its dropdown. It's initialized as `initStartMenu(START_MENU_APPS)` from
 `js/main.js`'s `boot()` — receiving the app list as a parameter rather than
 importing it back from `main.js` itself, since `main.js` already imports
 `start-menu.js`; importing it the other way round would be a circular
@@ -419,20 +422,27 @@ around that day (`.is-holiday`, `--aqua`) rather than a filled circle like
 `.is-today` (`--hotrose`) specifically so a day that's *both* still shows
 both instead of one hiding the other; the holiday's name is a native
 `title` tooltip — there's no room in a cell this small for real text.
+William's birthday (17 January, `BIRTHDAY` in `js/clock-panel.js`) gets
+the same "different color, no room for real text so it's a tooltip"
+treatment, but as a *filled* circle (`.is-birthday`, `--lilac`) rather
+than a ring, so it doesn't read as just another holiday — the one edge
+case where it could land on the same day as `.is-today` is resolved by
+CSS declaration order (`.is-today` declared last wins the tie), not
+JS, since "today" is the more useful thing to see at a glance.
 
 ## System Info
 
 **System Info** (`apps/system-info/`) is a normal app in every way except
 it isn't in `APPS` (see "Start menu" above for how `js/main.js` still
 resolves it) — a neofetch-styled "about me" card: profile photo
-(`williampp.jpg`) and a `user@williams-os` heading, OS/host/role/location
-facts styled as key/value rows, a skills list styled as package tags, and
-a `two-hearts.png` sign-off — real bio content dressed up as system info
-rather than an actual system reading anything real. Both `williampp.jpg`
-and `two-hearts.png` are resolved in `index.js` via `import.meta.url`
-rather than written as a plain `src` in `index.html`, same reason every
-other icon does: a relative URL sitting in static HTML resolves against
-the *page's* URL once that HTML is injected, not this folder's.
+(`williampp.jpg`) and name, OS/host/role/location facts styled as
+key/value rows, and a `two-hearts.png` sign-off — real bio content
+dressed up as system info rather than an actual system reading anything
+real. Both `williampp.jpg` and `two-hearts.png` are resolved in
+`index.js` via `import.meta.url` rather than written as a plain `src` in
+`index.html`, same reason every other icon does: a relative URL sitting
+in static HTML resolves against the *page's* URL once that HTML is
+injected, not this folder's.
 
 ## Adding a new app later
 
@@ -536,17 +546,22 @@ command line) is the standard way — but it's optional, not required.
   for the browser — no layout/paint per pixel), and only "bakes" that
   into real `left`/`top` on release. Dragging is clamped so a window can
   never end up partially off-screen or hidden behind the taskbar — the
-  opening position is now clamped too (matters most on a short/narrow
-  mobile viewport, where the old flat "80px + offset" could place a
-  window partly off-screen before it was ever touched). That clamp can't
-  just measure the window's real width/height the way the drag/resize
-  clamps do, though: a popup has no width of its own, only min/max-width
-  bounds, and its real size depends on the app's content — which hasn't
-  loaded into `.popup-body` yet at the point a window opens. So it mirrors
-  the CSS `max-width: min(600px, 90vw)` formula in JS instead, to get the
-  window's worst-case size without waiting on that; the real size, once
-  content loads, is always that or smaller, so a window positioned to fit
-  its max-possible size can't end up overflowing once it settles.
+  opening position is clamped the same way (matters most on a short/narrow
+  mobile viewport). That clamp can't just measure the window's real
+  width/height the way the drag/resize clamps do, though: a popup has no
+  width of its own, only min/max-width bounds, and its real size depends
+  on the app's content — which hasn't loaded into `.popup-body` yet at the
+  point a window opens. So it mirrors the CSS `max-width: min(600px, 90vw)`
+  formula in JS instead, to get the window's worst-case size without
+  waiting on that; the real size, once content loads, is always that or
+  smaller, so a window positioned/centered to fit its max-possible size
+  can't end up overflowing (or noticeably off-center) once it settles.
+  Windows open centered by default — `openLeft`/`openTop` (the clamp's own
+  bounds) already equal the leftover space around a worst-case-sized
+  window, so half of each is dead center, no separate calculation needed —
+  with `offset` (`js/main.js`'s `openCount`) still nudging each additional
+  window diagonally from the last so a second window opened on top of a
+  first isn't stacked exactly on top of it.
 - `.popup-window` is a flex column (titlebar, then `.popup-body` as
   `flex: 1`) rather than plain stacked blocks — that's what lets the body
   actually fill whatever height the window ends up with, instead of

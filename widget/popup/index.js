@@ -18,25 +18,30 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   const win = container.querySelector('.popup-window');
   const body = win.querySelector('.popup-body');
 
-  // clamped so the *opening* position is never off-screen either — matters
-  // most on a narrow (mobile) viewport, where a flat "80 + offset" could
-  // otherwise place a window partly past the edge before it's ever been
-  // touched. This can't just measure win.offsetWidth/Height here (the
+  // opens centered, clamped so it's never off-screen either — matters most
+  // on a narrow (mobile) viewport, where a window sized/centered for a
+  // wider one could otherwise land partly past the edge before it's ever
+  // been touched. This can't just measure win.offsetWidth/Height here (the
   // obvious thing to reach for, and what the drag/resize clamps below
   // both do) — the window has no width of its own, only min/max-width
   // bounds, so its real size depends on the app's content, which hasn't
   // loaded into .popup-body yet at this point. Mirroring the CSS max-width
   // formula instead gives the window's worst-case (largest possible) size
   // without needing to wait for that; the real size, once content loads,
-  // is always that or smaller, so clamping against it can't leave a
-  // window that was fine at open time overflowing once content settles.
+  // is always that or smaller, so a window centered/clamped against this
+  // can't end up overflowing (or noticeably off-center) once it settles.
   const layerBounds = container.parentElement.getBoundingClientRect();
   const maxPossibleWidth = Math.min(600, layerBounds.width * 0.9); // matches index.css's max-width: min(600px, 90vw)
   const maxPossibleHeight = Math.min(layerBounds.height * 0.7 + 30, layerBounds.height); // 70vh body cap + ~30px titlebar
   const openLeft = Math.max(layerBounds.width - maxPossibleWidth, 0);
   const openTop = Math.max(layerBounds.height - maxPossibleHeight, 0);
-  win.style.left = `${clamp(80 + offset, 0, openLeft)}px`;
-  win.style.top = `${clamp(80 + offset, 0, openTop)}px`;
+  // centered by default (openLeft/openTop already equal the leftover space
+  // around a worst-case-sized window, so half of that is dead center) —
+  // `offset` still nudges each additional window from the last, same
+  // diagonal cascade as before, just anchored to the middle instead of a
+  // fixed top-left corner
+  win.style.left = `${clamp(openLeft / 2 + offset, 0, openLeft)}px`;
+  win.style.top = `${clamp(openTop / 2 + offset, 0, openTop)}px`;
 
   win.querySelector('.popup-title').textContent = app.name;
 

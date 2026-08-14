@@ -185,9 +185,9 @@ body {
   height: 34px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--glass-border);
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  background: var(--glass);
+  background: transparent;
   cursor: pointer;
 }
 #start-button img {
@@ -198,8 +198,19 @@ body {
 #start-button:hover,
 #start-button:focus-visible,
 #start-button.is-active {
-  background: rgba(255,255,255,0.25);
+  background: var(--glass);
+  border-color: var(--glass-border);
   outline: none;
+}
+
+/* separates the Start button from the open-window tabs beside it, now
+   that the button itself has no resting-state border/background of its
+   own to imply that split */
+.taskbar-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 26px;
+  background: var(--glass-border);
 }
 
 /* clock-panel.js's taskbar button + the "..." system-info button beside it */
@@ -651,17 +662,27 @@ body {
   font: var(--fs-xs) var(--font-mono);
   color: var(--text);
 }
-.clock-panel-cal-day.is-today {
-  background: rgba(var(--hotrose-rgb), 0.5);
-  font-weight: 700;
-}
 /* a ring rather than a fill — so a holiday that's also today (is-today's
-   own solid fill) still reads as both at once instead of one hiding the
-   other; the name itself is a native title-attribute tooltip, see
+   own solid fill, below) still reads as both at once instead of one hiding
+   the other; the name itself is a native title-attribute tooltip, see
    clock-panel.js, not something that fits in a cell this small */
 .clock-panel-cal-day.is-holiday {
   box-shadow: inset 0 0 0 2px rgba(var(--aqua-rgb), 0.85);
   cursor: default;
+}
+/* a filled circle, same treatment as is-today but a different token, so a
+   birthday reads at a glance without hunting for the ring holidays get */
+.clock-panel-cal-day.is-birthday {
+  background: rgba(var(--lilac-rgb), 0.55);
+  font-weight: 700;
+  cursor: default;
+}
+/* declared last so it wins the tie (equal specificity) on the one day a
+   year this could coincide with is-birthday above — "today" is the more
+   useful thing to see at a glance in that rare case */
+.clock-panel-cal-day.is-today {
+  background: rgba(var(--hotrose-rgb), 0.5);
+  font-weight: 700;
 }
 .clock-panel-cal-day.is-empty {
   visibility: hidden;

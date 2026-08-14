@@ -1,7 +1,7 @@
 @scope (.sysinfo-app) {
   :scope {
     width: min(420px, 80vw);
-    padding: 4px 2px;
+    padding: 22px 24px 26px;
     font-family: var(--font-main);
     color: var(--win-text);
   }
@@ -31,9 +31,6 @@
   .sysinfo-user {
     font: 600 var(--fs-md) var(--font-mono);
     letter-spacing: 0.5px;
-  }
-  .sysinfo-at {
-    color: var(--hotrose);
   }
 
   .sysinfo-tagline {
@@ -75,42 +72,20 @@
     opacity: 0.85;
   }
 
-  .sysinfo-packages {
-    margin-top: 16px;
-  }
-  .sysinfo-packages-label {
-    display: block;
-    margin-bottom: 8px;
-    font: var(--fs-xs) var(--font-mono);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.6;
-  }
-  .sysinfo-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .sysinfo-tag {
-    padding: 3px 9px;
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.15);
-    background: rgba(255,255,255,0.3);
-    font: var(--fs-xs) var(--font-mono);
-    white-space: nowrap;
-  }
-
   .sysinfo-footer {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 18px 0 4px;
-    font: var(--fs-sm) var(--font-main);
-    opacity: 0.75;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0 2px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,0,0,0.12);
+    font: 600 var(--fs-md) var(--font-main);
+    text-align: center;
   }
   .sysinfo-heart {
-    width: 18px;
-    height: 18px;
+    width: 26px;
+    height: 26px;
     object-fit: contain;
     flex-shrink: 0;
   }

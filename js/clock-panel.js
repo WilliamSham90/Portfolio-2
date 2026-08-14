@@ -17,6 +17,9 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+// recurs every year — month is 0-indexed (0 = January), same as Date
+const BIRTHDAY = { month: 0, day: 17, label: "William's Birthday" };
+
 export function initClockPanel() {
   const button = document.getElementById('taskbar-clock-button');
   const timeEl = button.querySelector('.taskbar-clock-time');
@@ -103,11 +106,17 @@ function renderCalendar(panel, year, month, today) {
   for (let i = 0; i < firstWeekday; i++) cells.push('<span class="clock-panel-cal-day is-empty"></span>');
   for (let day = 1; day <= daysInMonth; day++) {
     const isToday = isCurrentMonth && day === today.getDate();
+    const isBirthday = month === BIRTHDAY.month && day === BIRTHDAY.day;
     const holidayName = holidays.get(dateKey(year, month, day));
+
     const classes = ['clock-panel-cal-day'];
     if (isToday) classes.push('is-today');
     if (holidayName) classes.push('is-holiday');
-    const title = holidayName ? ` title="${holidayName}"` : '';
+    if (isBirthday) classes.push('is-birthday');
+
+    const titles = [holidayName, isBirthday ? BIRTHDAY.label : null].filter(Boolean);
+    const title = titles.length ? ` title="${titles.join(' · ')}"` : '';
+
     cells.push(`<span class="${classes.join(' ')}"${title}>${day}</span>`);
   }
   gridEl.innerHTML = cells.join('');
