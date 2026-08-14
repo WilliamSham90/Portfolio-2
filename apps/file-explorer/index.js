@@ -1,5 +1,5 @@
 import { APPS } from '../../main.js';
-import { listFolders, getFolder, createFolder, removeAppFromFolder } from '../../folders.js';
+import { listFolders, getFolder, removeAppFromFolder } from '../../folders.js';
 import manifest from '../../assets/manifest.js';
 
 const CATEGORIES = [
@@ -13,63 +13,84 @@ const CATEGORIES = [
 /**
  * Called by loader.js after this app's HTML is mounted.
  * @param {HTMLElement} container  this app instance's own root element
- * @param {string} [folderId]  open straight into this folder instead of "This PC"
+ * @param {string} [folderId]  pre-select this folder instead of showing nothing selected
  */
 export function init(container, folderId) {
+  const sidebarEl = container.querySelector('.explorer-sidebar');
+  const titleEl = container.querySelector('.explorer-main-title');
   const listEl = container.querySelector('.explorer-list');
-  const pathEl = container.querySelector('.explorer-path');
-  const backBtn = container.querySelector('.explorer-back');
 
-  let location = folderId ? { type: 'folder', id: folderId } : { type: 'root' };
+  // { type: 'folder', id } | { type: 'category', key } | null (nothing selected yet)
+  let selected = folderId ? { type: 'folder', id: folderId } : null;
 
-  function goTo(next) {
-    location = next;
+  function select(next) {
+    selected = next;
     render();
   }
 
+  function isSelected(type, key) {
+    return selected?.type === type && (type === 'folder' ? selected.id === key : selected.key === key);
+  }
+
   function render() {
-    backBtn.disabled = location.type === 'root';
-    pathEl.textContent = locationLabel(location);
+    renderSidebar();
+    renderMain();
+  }
+
+  function renderSidebar() {
+    sidebarEl.replaceChildren();
+
+    const folders = listFolders();
+    if (folders.length > 0) {
+      sidebarEl.appendChild(heading('Folders'));
+      for (const folder of folders) {
+        sidebarEl.appendChild(sidebarItem({
+          icon: folder.icon,
+          name: folder.name,
+          active: isSelected('folder', folder.id),
+          onClick: () => select({ type: 'folder', id: folder.id }),
+        }));
+      }
+    }
+
+    sidebarEl.appendChild(heading('Library'));
+    for (const cat of CATEGORIES) {
+      sidebarEl.appendChild(sidebarItem({
+        icon: cat.icon,
+        name: cat.name,
+        active: isSelected('category', cat.key),
+        onClick: () => select({ type: 'category', key: cat.key }),
+      }));
+    }
+  }
+
+  function renderMain() {
     listEl.replaceChildren();
 
-    if (location.type === 'root') renderRoot();
-    else if (location.type === 'folder') renderFolder(location.id);
-    else renderCategory(location.key);
-  }
+    if (selected?.type === 'folder' && !getFolder(selected.id)) selected = null; // folder got deleted/emptied elsewhere
 
-  function renderRoot() {
-    const newFolder = row({ icon: '➕', name: 'New Folder', kind: 'action' });
-    newFolder.mainEl.addEventListener('click', () => {
-      const folder = createFolder();
-      goTo({ type: 'folder', id: folder.id });
-    });
-    listEl.appendChild(newFolder.el);
-
-    for (const folder of listFolders()) {
-      const r = row({ icon: folder.icon, name: folder.name });
-      r.mainEl.addEventListener('click', () => goTo({ type: 'folder', id: folder.id }));
-      listEl.appendChild(r.el);
-    }
-
-    for (const cat of CATEGORIES) {
-      const r = row({ icon: cat.icon, name: cat.name });
-      r.mainEl.addEventListener('click', () => goTo({ type: 'category', key: cat.key }));
-      listEl.appendChild(r.el);
-    }
-  }
-
-  function renderFolder(folderId) {
-    const folder = getFolder(folderId);
-    if (!folder) {
-      goTo({ type: 'root' });
+    if (!selected) {
+      titleEl.textContent = 'This PC';
+      listEl.appendChild(emptyHint('Select a folder or a library category on the left.'));
       return;
     }
 
+    if (selected.type === 'folder') {
+      const folder = getFolder(selected.id);
+      titleEl.textContent = folder.name;
+      renderFolder(folder);
+    } else {
+      const cat = CATEGORIES.find((c) => c.key === selected.key);
+      titleEl.textContent = cat.name;
+      renderCategory(cat);
+    }
+  }
+
+  function renderFolder(folder) {
     if (folder.appIds.length === 0) {
       listEl.appendChild(emptyHint('Empty. Drag an app onto this folder’s desktop icon to file it in here.'));
       return;
     }
-
     for (const appId of folder.appIds) {
       const app = APPS.find((a) => a.id === appId);
       if (!app) continue;
@@ -85,24 +106,20 @@ export function init(container, folderId) {
     }
   }
 
-  function renderCategory(key) {
-    const cat = CATEGORIES.find((c) => c.key === key);
-    const files = manifest[key] ?? [];
-
+  function renderCategory(cat) {
+    const files = manifest[cat.key] ?? [];
     if (files.length === 0) {
       listEl.appendChild(emptyHint('Nothing here yet.'));
       return;
     }
-
     // fonts are just a family list (no single file to open) — everything
     // else opens in a new tab and lets the browser's native viewer handle it
-    const openable = key !== 'fonts';
-
+    const openable = cat.key !== 'fonts';
     for (const file of files) {
       const r = row({ icon: cat.icon, name: file.name, kind: openable ? 'default' : 'static' });
       if (openable) {
         r.mainEl.addEventListener('click', () => {
-          const url = new URL(`../../assets/${key}/${file.file}`, import.meta.url);
+          const url = new URL(`../../assets/${cat.key}/${file.file}`, import.meta.url);
           window.open(url, '_blank');
         });
       }
@@ -110,29 +127,40 @@ export function init(container, folderId) {
     }
   }
 
-  // a folder created/filed/emptied elsewhere (the desktop, another File
-  // Explorer window) should be reflected here too, live
+  // a folder created/renamed/filed/emptied elsewhere (the desktop, another
+  // File Explorer window, the right-click menu) should show up here too
   document.addEventListener('os:folders-changed', render);
-
-  backBtn.addEventListener('click', () => goTo({ type: 'root' }));
 
   render();
 }
 
-function locationLabel(location) {
-  if (location.type === 'root') return 'This PC';
-  if (location.type === 'folder') return getFolder(location.id)?.name ?? 'Folder';
-  return CATEGORIES.find((c) => c.key === location.key)?.name ?? '';
+function heading(text) {
+  const h = document.createElement('div');
+  h.className = 'explorer-sidebar-heading';
+  h.textContent = text;
+  return h;
+}
+
+function sidebarItem({ icon, name, active, onClick }) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'explorer-sidebar-item' + (active ? ' is-active' : '');
+  btn.innerHTML = `
+    <span class="explorer-sidebar-icon">${icon}</span>
+    <span class="explorer-sidebar-name">${name}</span>
+  `;
+  btn.addEventListener('click', onClick);
+  return btn;
 }
 
 /**
- * One list row. `kind: 'action'` styles it as an "add" affordance (dashed
- * border); `kind: 'static'` renders a plain, non-interactive row (no
- * button semantics) for entries that don't do anything yet.
+ * One row in the right-hand list. `kind: 'static'` renders a plain,
+ * non-interactive row (no button semantics) for entries that don't do
+ * anything yet (fonts).
  */
 function row({ icon, name, kind = 'default', removable = false }) {
   const el = document.createElement('div');
-  el.className = 'explorer-row' + (kind === 'action' ? ' is-action' : '');
+  el.className = 'explorer-row';
 
   const mainEl = document.createElement(kind === 'static' ? 'div' : 'button');
   if (mainEl.tagName === 'BUTTON') mainEl.type = 'button';

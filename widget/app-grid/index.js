@@ -1,4 +1,4 @@
-import { listFolders, fileAppIntoFolder } from '../../folders.js';
+import { listFolders, fileAppIntoFolder, renameFolder } from '../../folders.js';
 
 const STORAGE_KEY = 'os-app-grid-slots-v1';
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag, not a tap
@@ -27,6 +27,14 @@ export function init(container, apps) {
   // a folder being created/filed/emptied (from this window or a File
   // Explorer window) means the desktop's own icon set has changed
   document.addEventListener('os:folders-changed', () => render(ctx));
+
+  // the context menu (or a fresh "New Folder") asks for a folder's icon
+  // to enter its inline rename state
+  document.addEventListener('os:rename-folder', (event) => {
+    const item = ctx.items.find((i) => i.id === event.detail.id);
+    const el = ctx.elsByAppId.get(event.detail.id);
+    if (item && el) startRename(ctx, item, el);
+  });
 
   // reflow (column count can change) whenever the grid is resized — window
   // resize, orientation change, sidebar toggling, etc.
@@ -58,6 +66,8 @@ function render(ctx) {
     btn.className = 'app-icon';
     btn.type = 'button';
     btn.setAttribute('aria-label', item.kind === 'folder' ? `Open folder ${item.name}` : `Open ${item.name}`);
+    btn.dataset.itemKind = item.kind;
+    btn.dataset.itemId = item.id;
     btn.innerHTML = `
       <span class="app-icon-glyph">${item.icon}</span>
       <span class="app-icon-label">${item.name}</span>
@@ -162,6 +172,55 @@ function fadeOut(el) {
   el.style.pointerEvents = 'none';
   el.style.opacity = '0';
   el.style.scale = '0.7';
+}
+
+/* ---------- renaming a folder in place ----------
+   The input can't live inside the icon <button> (buttons can't contain
+   interactive content per the HTML spec, and browsers get flaky about
+   focus/selection when you do it anyway) — so it's a floating overlay,
+   positioned over the label, same trick as the drop-highlight. */
+
+function startRename(ctx, item, el) {
+  if (item.kind !== 'folder') return;
+
+  const labelEl = el.querySelector('.app-icon-label');
+  const gridRect = ctx.grid.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const labelRect = labelEl.getBoundingClientRect();
+
+  labelEl.style.visibility = 'hidden';
+  el.style.pointerEvents = 'none'; // block drag/click on the icon underneath while editing
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'app-icon-rename';
+  input.maxLength = 60;
+  input.value = item.name;
+  input.style.left = `${elRect.left - gridRect.left + 4}px`;
+  input.style.top = `${labelRect.top - gridRect.top}px`;
+  input.style.width = `${elRect.width - 8}px`;
+  ctx.grid.appendChild(input);
+  input.focus();
+  input.select();
+
+  let settled = false;
+  const finish = (commit) => {
+    if (settled) return;
+    settled = true;
+    if (commit) renameFolder(item.id, input.value); // no-op if blank/unchanged
+    input.remove();
+    labelEl.style.visibility = '';
+    el.style.pointerEvents = '';
+  };
+
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+    else if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
+  // don't let clicks/drags on the overlay reach the icon button underneath
+  input.addEventListener('pointerdown', (event) => event.stopPropagation());
+  input.addEventListener('click', (event) => event.stopPropagation());
 }
 
 /* ---------- dragging an icon to reposition it (or file it into a folder) ---------- */

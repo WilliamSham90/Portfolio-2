@@ -179,32 +179,43 @@ Desktop folders and the File Explorer ("My Computer") work together:
   of that). The app fades out and disappears from the desktop; it's now
   only reachable from inside that folder. Each folder's view in the
   Explorer lists what's inside with a small ✕ to move an app back out.
-- **My Computer** is a completely ordinary app (`apps/file-explorer/`,
-  in `APPS` like any other) — draggable, filable into a folder, etc. Its
-  root view ("This PC") lists your folders plus a read-only `assets/`
-  library (Images/Music/Videos/PDF/Fonts, from `assets/manifest.js`).
+- **Renaming a folder**: creating one (right-click → New Folder) drops it
+  straight into an inline rename — type a name, Enter/click-away commits,
+  Escape cancels — same as double-clicking a folder's name on a real OS.
+  You can rename it again anytime via right-click → Rename. The rename
+  box is a floating overlay positioned over the icon's label rather than
+  an `<input>` nested inside the icon's `<button>` — the latter is invalid
+  HTML and browsers get flaky about focus/selection when you do it anyway
+  (see `startRename()` in `widget/app-grid/index.js`).
+- **My Computer** is a completely ordinary app (`apps/file-explorer/`, in
+  `APPS` like any other) — draggable, filable into a folder, etc. It's a
+  two-pane window: a left sidebar lists your folders and the read-only
+  `assets/` library (Images/Music/Videos/PDF/Fonts, from
+  `assets/manifest.js`); clicking one shows its contents on the right.
   Clicking a PDF/image/audio/video file opens it in a new tab and lets
   the browser's own viewer handle it — no custom player yet. **Fonts**
   just lists the family names (nothing to open — see "Theme fonts").
 - Deliberately out of scope for now (all easy to add later, on top of
-  the same pieces above): nested folders, renaming a folder, and the
-  custom-skinned music/image/video players — those need their own
-  focused design pass rather than being rushed in here.
+  the same pieces above): nested folders and the custom-skinned
+  music/image/video players — those need their own focused design pass
+  rather than being rushed in here.
 
 ## Right-click menu
 
 `context-menu.js` swaps the browser's native right-click menu for the
-OS's own, everywhere on the page — New Folder / My Computer / Settings
-(the last one just opens the Themes app for now; there's no separate
-Settings app yet).
+OS's own, everywhere on the page. What it shows depends on the target:
+right-clicking a folder icon gets Open/Rename; anywhere else gets the
+general desktop menu (New Folder / My Computer / Settings — the last one
+just opens the Themes app for now, there's no separate Settings app yet).
+To add a menu item, add one `{icon, label, run}` entry to `DESKTOP_ITEMS`
+(or `folderItems()`) in `context-menu.js` — same shape as `APPS` in
+`main.js`.
 
 **Shift+right-click still opens the real browser menu** — the handler
 checks `event.shiftKey` and simply doesn't call `preventDefault()` when
 it's held, so the native menu (Inspect, etc.) opens exactly as normal.
 That's the only thing touched; keyboard devtools shortcuts (F12,
-Ctrl+Shift+I) were never intercepted in the first place. To add a menu
-item, add one `{icon, label, run}` entry to the `ITEMS` array at the top
-of `context-menu.js` — same shape as `APPS` in `main.js`.
+Ctrl+Shift+I) were never intercepted in the first place.
 
 ## Adding a new app later
 
@@ -268,7 +279,7 @@ command line) is the standard way — but it's optional, not required.
 - A `ResizeObserver` recomputes the column count on resize (or mobile
   orientation change) and re-lays out every icon accordingly.
 
-## Windows: dragging + taskbar tabs
+## Windows: dragging, minimize/maximize + taskbar tabs
 
 - `widget/popup/index.js` makes each window's titlebar draggable with
   Pointer Events. While dragging it moves via a CSS `transform` (cheap
@@ -280,6 +291,19 @@ command line) is the standard way — but it's optional, not required.
 - `main.js` listens for that event and keeps one `.taskbar-tab` button in
   `#taskbar-tabs` per open window, highlighting whichever one is active
   and removing the tab automatically when that window is closed.
+- **Maximize** (titlebar button, or double-click the titlebar) fills the
+  desktop area — `#popup-layer`, i.e. up to the taskbar — via a CSS class
+  (`.is-maximized`), *not* the browser's real Fullscreen API. That's on
+  purpose: Fullscreen would take over the whole browser window and hide
+  the taskbar with it, and the ask here was to stay "in the PC" — the
+  taskbar has to stay reachable so you can still switch/restore windows.
+  Dragging is disabled while maximized (nothing to drag when it already
+  fills the screen).
+- **Minimize** (titlebar button) just hides the window (`.is-minimized`)
+  and dims its taskbar tab. Clicking that tab again restores it; clicking
+  the tab of the window that's already active minimizes it instead — the
+  same toggle either way, `popup:toggle-minimize`, decided by
+  `main.js`'s tab click handler based on the tab's current classes.
 
 ## Roadmap (not built yet, on purpose)
 
@@ -287,6 +311,3 @@ command line) is the standard way — but it's optional, not required.
   and the shell is a single flex column, so a mobile layout can likely be
   a second stylesheet + a small breakpoint/JS check later, without
   touching any widget or app.
-- **Minimize**: clicking a window's own taskbar tab currently just
-  refocuses it. Making it toggle hide/show when the window is already
-  active would be the natural next step, in `main.js`'s tab click handler.

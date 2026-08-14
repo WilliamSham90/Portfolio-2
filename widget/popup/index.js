@@ -29,7 +29,10 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   container.addEventListener('popup:focus', () => activate(win, container));
   activate(win, container);
 
-  makeDraggable(win, win.querySelector('.popup-titlebar'));
+  const handle = win.querySelector('.popup-titlebar');
+  makeDraggable(win, handle);
+  makeMaximizable(win, handle, win.querySelector('.popup-maximize'));
+  makeMinimizable(win, container, win.querySelector('.popup-minimize'));
 
   // load the actual app (its own html/css/js) into this window's body
   const body = win.querySelector('.popup-body');
@@ -62,7 +65,8 @@ function makeDraggable(win, handle) {
   };
 
   handle.addEventListener('pointerdown', (event) => {
-    if (event.target.closest('.popup-close')) return;
+    if (event.target.closest('.popup-titlebar-actions')) return; // minimize/maximize/close, not a drag
+    if (win.classList.contains('is-maximized')) return; // nothing to drag when it's filling the screen
     dragging = true;
     dx = 0;
     dy = 0;
@@ -116,6 +120,59 @@ function makeDraggable(win, handle) {
 
   handle.addEventListener('pointerup', endDrag);
   handle.addEventListener('pointercancel', endDrag);
+}
+
+/**
+ * Maximize fills the desktop area (#popup-layer — the space above the
+ * taskbar), not the real browser window; that's just a CSS class
+ * (.is-maximized, see index.css) rather than the Fullscreen API, which
+ * would take over the whole browser and hide the taskbar along with it.
+ * Toggled by the titlebar button or a titlebar double-click, same as any
+ * normal OS window.
+ */
+function makeMaximizable(win, handle, button) {
+  let restoreLeft = null;
+  let restoreTop = null;
+
+  const toggle = () => {
+    const maximizing = !win.classList.contains('is-maximized');
+    if (maximizing) {
+      restoreLeft = win.style.left;
+      restoreTop = win.style.top;
+      win.style.left = '';
+      win.style.top = '';
+      win.classList.add('is-maximized');
+    } else {
+      win.classList.remove('is-maximized');
+      win.style.left = restoreLeft;
+      win.style.top = restoreTop;
+    }
+    button.innerHTML = maximizing ? '&#9635;' : '&#9633;';
+    button.setAttribute('aria-label', maximizing ? 'Restore' : 'Maximize');
+  };
+
+  button.addEventListener('click', toggle);
+  handle.addEventListener('dblclick', (event) => {
+    if (event.target.closest('.popup-titlebar-actions')) return;
+    toggle();
+  });
+}
+
+/** Minimize just hides the window (see .is-minimized in index.css) — its
+ *  taskbar tab is what brings it back. */
+function makeMinimizable(win, container, button) {
+  const setMinimized = (minimized) => {
+    win.classList.toggle('is-minimized', minimized);
+    container.dispatchEvent(new CustomEvent('popup:minimized', { detail: { minimized }, bubbles: true }));
+    if (!minimized) activate(win, container);
+  };
+
+  button.addEventListener('click', () => setMinimized(true));
+  // the taskbar tab dispatches this when its window is minimized (restore
+  // it) or already active (minimize it) — see createTaskbarTab in main.js
+  container.addEventListener('popup:toggle-minimize', () => {
+    setMinimized(!win.classList.contains('is-minimized'));
+  });
 }
 
 function clamp(value, min, max) {

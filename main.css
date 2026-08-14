@@ -197,6 +197,9 @@ body {
   color: var(--text);
   outline: none;
 }
+.taskbar-tab.is-minimized {
+  opacity: 0.55;
+}
 
 /* ---------- RIGHT-CLICK MENU (context-menu.js) ---------- */
 .context-menu {

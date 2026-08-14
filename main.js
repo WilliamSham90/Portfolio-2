@@ -48,6 +48,14 @@ async function boot() {
     setActiveTab(event.target);
   });
 
+  // ...and whenever it's been minimized/restored, so its tab can dim itself
+  document.addEventListener('popup:minimized', (event) => {
+    const tab = openWindows.get(event.target);
+    if (!tab) return;
+    tab.classList.toggle('is-minimized', event.detail.minimized);
+    if (event.detail.minimized) tab.classList.remove('is-active');
+  });
+
   // 4. taskbar clock
   const clockEl = document.getElementById('taskbar-clock');
   const tick = () => {
@@ -91,9 +99,14 @@ function createTaskbarTab(app, popupRoot) {
   tab.className = 'taskbar-tab';
   tab.innerHTML = `<span class="taskbar-tab-icon">${app.icon}</span><span class="taskbar-tab-label">${app.name}</span>`;
 
-  // clicking the tab asks that specific popup to bring itself to front
+  // clicking the tab for a minimized (or already-active) window toggles it
+  // minimized/restored; otherwise it just brings that window to front
   tab.addEventListener('click', () => {
-    popupRoot.dispatchEvent(new CustomEvent('popup:focus'));
+    if (tab.classList.contains('is-minimized') || tab.classList.contains('is-active')) {
+      popupRoot.dispatchEvent(new CustomEvent('popup:toggle-minimize'));
+    } else {
+      popupRoot.dispatchEvent(new CustomEvent('popup:focus'));
+    }
   });
 
   tabs.appendChild(tab);

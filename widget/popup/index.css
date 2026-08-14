@@ -14,6 +14,24 @@
     animation: popup-in 0.15s ease-out;
   }
 
+  /* maximize fills the desktop area (not the real browser viewport — see
+     README.md > "Windows: minimize, maximize, dragging + taskbar tabs")
+     up to the taskbar. Clearing the inline left/top JS sets while dragging
+     is what lets these take effect — see toggleMaximize() in index.js. */
+  :scope.is-maximized {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    min-width: 0;
+    border-radius: 0;
+  }
+
+  :scope.is-minimized {
+    display: none;
+  }
+
   .popup-titlebar {
     height: 30px;
     display: flex;
@@ -33,6 +51,15 @@
     cursor: grabbing;
   }
 
+  .popup-titlebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .popup-minimize,
+  .popup-maximize,
   .popup-close {
     width: 22px;
     height: 22px;
@@ -41,11 +68,18 @@
     border: none;
     background: transparent;
     color: var(--text);
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1;
     cursor: pointer;
     border-radius: 4px;
   }
+  .popup-close {
+    font-size: 16px;
+  }
+  .popup-minimize:hover,
+  .popup-minimize:focus-visible,
+  .popup-maximize:hover,
+  .popup-maximize:focus-visible,
   .popup-close:hover,
   .popup-close:focus-visible {
     background: rgba(255,255,255,0.25);
@@ -57,6 +91,11 @@
     color: var(--win-text);
     max-height: 70vh;
     overflow: auto;
+  }
+
+  :scope.is-maximized .popup-body {
+    max-height: none;
+    height: calc(100% - 30px); /* fill everything below the 30px titlebar */
   }
 }
 

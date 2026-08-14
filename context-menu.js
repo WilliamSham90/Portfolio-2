@@ -2,6 +2,9 @@
    context-menu.js
    Replaces the browser's right-click menu with the OS's own, everywhere
    on the page — same "small kernel module" shape as theme.js/folders.js.
+   What it shows depends on what's under the cursor: right-clicking a
+   folder icon gets its own Open/Rename menu, everything else gets the
+   general desktop one.
 
    Shift+right-click is left alone on purpose: the handler bails out
    before preventDefault(), so the browser's real menu (Inspect, etc.)
@@ -12,36 +15,44 @@
 
 import { createFolder } from './folders.js';
 
-const ITEMS = [
-  { icon: '📁', label: 'New Folder', run: () => createFolder() },
+function launchApp(id) {
+  document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id } }));
+}
+
+function renameFolderPrompt(id) {
+  document.dispatchEvent(new CustomEvent('os:rename-folder', { detail: { id } }));
+}
+
+const DESKTOP_ITEMS = [
+  {
+    icon: '📁',
+    label: 'New Folder',
+    run: () => {
+      const folder = createFolder();
+      renameFolderPrompt(folder.id); // straight into rename, like a normal OS
+    },
+  },
   { icon: '🖥️', label: 'My Computer', run: () => launchApp('my-computer') },
   { icon: '🎨', label: 'Settings', run: () => launchApp('themes') },
 ];
 
-function launchApp(id) {
-  document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id } }));
+function folderItems(folderId) {
+  return [
+    { icon: '📂', label: 'Open', run: () => document.dispatchEvent(new CustomEvent('os:open-folder', { detail: { id: folderId } })) },
+    { icon: '✏️', label: 'Rename', run: () => renameFolderPrompt(folderId) },
+  ];
 }
 
 export function initContextMenu() {
   const menu = document.getElementById('context-menu');
 
-  for (const item of ITEMS) {
-    const li = document.createElement('li');
-    li.className = 'context-menu-item';
-    li.setAttribute('role', 'menuitem');
-    li.tabIndex = -1;
-    li.innerHTML = `<span class="context-menu-icon">${item.icon}</span><span>${item.label}</span>`;
-    li.addEventListener('click', () => {
-      item.run();
-      hide();
-    });
-    menu.appendChild(li);
-  }
-
   document.addEventListener('contextmenu', (event) => {
     if (event.shiftKey) return; // let the real browser menu through
     event.preventDefault();
-    show(event.clientX, event.clientY);
+
+    const folderEl = event.target.closest('.app-icon[data-item-kind="folder"]');
+    const items = folderEl ? folderItems(folderEl.dataset.itemId) : DESKTOP_ITEMS;
+    show(event.clientX, event.clientY, items);
   });
 
   document.addEventListener('pointerdown', (event) => {
@@ -53,7 +64,21 @@ export function initContextMenu() {
   window.addEventListener('blur', hide);
   window.addEventListener('resize', hide);
 
-  function show(x, y) {
+  function show(x, y, items) {
+    menu.replaceChildren();
+    for (const item of items) {
+      const li = document.createElement('li');
+      li.className = 'context-menu-item';
+      li.setAttribute('role', 'menuitem');
+      li.tabIndex = -1;
+      li.innerHTML = `<span class="context-menu-icon">${item.icon}</span><span>${item.label}</span>`;
+      li.addEventListener('click', () => {
+        item.run();
+        hide();
+      });
+      menu.appendChild(li);
+    }
+
     menu.hidden = false;
     menu.style.left = '0px';
     menu.style.top = '0px';

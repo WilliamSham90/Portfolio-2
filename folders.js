@@ -60,6 +60,16 @@ export function createFolder() {
   return folder;
 }
 
+/** Renames a folder. Empty/unchanged names are ignored (caller decides what "empty" means). */
+export function renameFolder(id, name) {
+  const folders = load();
+  const folder = folders.find((f) => f.id === id);
+  const trimmed = name.trim();
+  if (!folder || !trimmed || trimmed === folder.name) return;
+  folder.name = trimmed;
+  save(folders);
+}
+
 /** Moves an app off the desktop and into a folder. */
 export function fileAppIntoFolder(appId, folderId) {
   const folders = load();
