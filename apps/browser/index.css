@@ -1,0 +1,71 @@
+@scope (.browser-app) {
+  :scope {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* fills the window when maximized/resized — see the
+                     .widget-instance note in css/main.css; a no-op at the
+                     default content-sized window height */
+    min-width: 320px;
+    min-height: 320px;
+  }
+
+  .browser-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 8px;
+    background: rgba(255,255,255,0.25);
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .browser-home,
+  .browser-reload,
+  .browser-go {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.4);
+    color: var(--win-text);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .browser-home:hover,
+  .browser-home:focus-visible,
+  .browser-reload:hover,
+  .browser-reload:focus-visible,
+  .browser-go:hover,
+  .browser-go:focus-visible {
+    background: rgba(255,255,255,0.65);
+    outline: none;
+  }
+
+  .browser-address {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 12px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.6);
+    color: var(--win-text);
+    font: var(--fs-sm) var(--font-mono);
+  }
+  .browser-address:focus-visible {
+    outline: 2px solid var(--hotrose);
+    outline-offset: 1px;
+  }
+
+  .browser-frame {
+    flex: 1;
+    min-height: 300px; /* a reasonable floor at the default content-sized
+                           window height, since flex:1 alone has nothing
+                           to grow into there (see popup .popup-body) */
+    border: 0;
+    background: #fff; /* most pages assume a white canvas regardless of our theme */
+  }
+}

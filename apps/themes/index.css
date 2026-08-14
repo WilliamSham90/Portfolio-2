@@ -3,7 +3,10 @@
     padding: 22px 24px 26px;
     font-family: var(--font-main);
     min-width: 340px;
-    max-width: 520px;
+    /* no max-width — a plain block naturally fills whatever width
+       .popup-body gives it, so this grows with the window (maximized or
+       manually resized) instead of staying pinned to a size picked for
+       the default, unresized window */
   }
 
   .themes-intro {
@@ -15,7 +18,14 @@
 
   .theme-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    /* auto-fit, not auto-fill: auto-fill would keep reserving empty
+       140px+ column tracks once the window's wider than 6 cards need,
+       leaving the real cards stuck at their minimum size in a corner.
+       auto-fit collapses those empty tracks instead, so the 1fr in
+       minmax() has actual leftover space to hand back to the real cards
+       — which is what makes them grow to fill a maximized/resized window
+       instead of just leaving blank space next to them. */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
   }
 

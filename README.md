@@ -62,7 +62,11 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── media-viewer/             opened by file-explorer when an image is clicked (see "Folders")
+    ├── media-viewer/             opened by file-explorer when an image is clicked (see "Folders")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    └── browser/                  iframe + address bar (see "Adding a new app later")
         ├── index.html
         ├── index.css
         └── index.js
@@ -294,18 +298,32 @@ Ctrl+Shift+I) were never intercepted in the first place.
    ```
 That's it — no other file needs to change.
 
-An `APPS` entry doesn't have to be a popup app at all — the **Browser**
-icon is `{ id, name, icon, external: 'https://...' }`, no `path`. The
-`os:launch-app` handler in `js/main.js` checks for `external` first and
-just does a real `window.open(url, '_blank', 'noopener,noreferrer')`
-instead of opening a popup — a real Google search tab needs to actually
-be a new tab anyway (Google blocks being framed), so this is simpler
-than pretending it's a windowed app. Its icon/name come from
-`js/browser-icon.js`, which sniffs `navigator.userAgent` at boot and
-picks the closest emoji to whatever browser is actually running it
-(Firefox's fox, Safari's compass, ...) rather than a generic globe for
-everyone — cosmetic only, nothing else depends on the detection being
-exact.
+**Browser** (`apps/browser/`) is a normal popup app like any other —
+`{ id, name, icon, path: './apps/browser/' }` — just one whose content is
+an `<iframe>` with a small address bar in front of it, defaulting to
+Wikipedia. Not a search engine: every mainstream one sends an
+X-Frame-Options/CSP header specifically to refuse being shown inside
+someone else's page, and there's no way around that from our side — it's
+each site's own server-side policy, not a limitation of the iframe or
+this code. This isn't assumed — Google, DuckDuckGo (both the main site
+*and* its "lite" `html.duckduckgo.com`), Bing, Startpage, Brave Search,
+Qwant, Mojeek, You.com and searx.be were all actually tried and confirmed
+blocked; Yahoo looked embeddable (no blocking header) but rendered a
+blank frame in practice, so it's excluded too. Wikipedia is the one
+broadly-useful option that was actually verified to work, hence the
+default — a plain search term goes to its search, not a general web
+search. Navigating to a site that *does* block framing just shows that
+browser's normal "refused to connect" page inside the frame — expected
+behavior, not a bug. There's no back/forward, only Home/Reload — once the
+iframe has navigated to a different (cross-origin) site, the page
+genuinely can't read or drive its history from out here, so those
+buttons would just be fake.
+
+Its icon/name come from `js/browser-icon.js`, which sniffs
+`navigator.userAgent` at boot and picks the closest emoji to whatever
+browser is actually running it (Firefox's fox, Safari's compass, ...)
+rather than a generic globe for everyone — cosmetic only, nothing else
+depends on the detection being exact.
 
 ## Running it
 
