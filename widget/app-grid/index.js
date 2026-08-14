@@ -57,6 +57,13 @@ function visibleItems(ctx) {
 function render(ctx) {
   ctx.items = visibleItems(ctx);
   ctx.slotMap = loadSlots(ctx.items);
+  // any item that just got a fresh "next free slot" (never individually
+  // dragged, so nothing to load for it above) needs that committed now —
+  // otherwise it's only ever a slot computed for *this* render, and the
+  // next one (another folder created/deleted, an app filed/unfiled...)
+  // would freely recompute it differently, and the icon visibly jumps
+  // somewhere else on its own, without anyone having dragged it
+  saveSlots(ctx.slotMap);
 
   for (const el of ctx.grid.querySelectorAll('.app-icon')) el.remove();
   ctx.elsByAppId.clear();

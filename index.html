@@ -40,6 +40,18 @@
        README.md > "Right-click menu" — so Inspect stays reachable. -->
   <ul id="context-menu" class="context-menu" role="menu" hidden></ul>
 
+  <!-- themed replacement for window.confirm() (confirm-dialog.js) -->
+  <div id="confirm-dialog" class="confirm-dialog" hidden>
+    <div class="confirm-dialog-backdrop"></div>
+    <div class="confirm-dialog-panel" role="alertdialog" aria-modal="true">
+      <p class="confirm-dialog-message"></p>
+      <div class="confirm-dialog-actions">
+        <button type="button" class="confirm-dialog-cancel"></button>
+        <button type="button" class="confirm-dialog-confirm"></button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./main.js"></script>
 </body>
 </html>

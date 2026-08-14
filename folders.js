@@ -70,6 +70,18 @@ export function renameFolder(id, name) {
   save(folders);
 }
 
+/**
+ * Deletes a folder. Anything filed inside it isn't touched or lost — it
+ * just stops being excluded from the desktop (see visibleItems() in
+ * widget/app-grid), so it reappears there on its own, no extra step needed.
+ */
+export function deleteFolder(id) {
+  const folders = load();
+  const next = folders.filter((f) => f.id !== id);
+  if (next.length === folders.length) return;
+  save(next);
+}
+
 /** Moves an app off the desktop and into a folder. */
 export function fileAppIntoFolder(appId, folderId) {
   const folders = load();

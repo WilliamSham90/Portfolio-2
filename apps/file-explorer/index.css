@@ -1,9 +1,12 @@
 @scope (.explorer-app) {
   :scope {
+    --cell-size: 72px;
+    --cell-gap: 12px;
+
     display: flex;
     align-items: stretch;
-    min-width: 420px;
-    max-width: 560px;
+    min-width: 440px;
+    max-width: 600px;
     min-height: 260px;
     font-family: var(--font-main);
   }
@@ -78,10 +81,18 @@
     padding: 14px 16px 16px;
   }
 
-  .explorer-main-title {
+  .explorer-main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin: 0 0 10px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .explorer-main-title {
+    min-width: 0;
     font: var(--fs-sm) var(--font-mono);
     color: var(--win-text);
     opacity: 0.8;
@@ -91,11 +102,39 @@
     white-space: nowrap;
   }
 
+  .explorer-view-toggle {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.3);
+    color: var(--win-text);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .explorer-view-toggle:hover,
+  .explorer-view-toggle:focus-visible {
+    background: rgba(255,255,255,0.55);
+    outline: none;
+  }
+
+  /* list view (default markup) */
   .explorer-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
     overflow-y: auto;
+  }
+
+  /* grid view — same "icon over label" shape as the desktop's own grid */
+  .explorer-list.is-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--cell-size));
+    gap: var(--cell-gap);
+    align-content: start;
   }
 
   .explorer-row {
@@ -165,5 +204,76 @@
     color: var(--win-text);
     opacity: 0.6;
     line-height: 1.5;
+    /* the empty-state paragraph can land inside a grid container too —
+       let it span every column instead of being squeezed into the first cell */
+    grid-column: 1 / -1;
+  }
+
+  /* ---------- grid-view cell (the .is-grid counterpart to .explorer-row) ----------
+     .explorer-cell-wrap is the actual grid item (sized by the grid track);
+     .explorer-cell is the clickable button inside it. Two elements, same
+     reason .explorer-row/-row-main are split: a removable cell's ✕ button
+     can't be nested inside another button (invalid HTML, flaky focus). */
+
+  .explorer-cell-wrap {
+    position: relative;
+  }
+
+  .explorer-cell {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--win-text);
+    cursor: pointer;
+    text-align: center;
+  }
+  .explorer-cell:hover,
+  .explorer-cell:focus-visible {
+    background: rgba(255,255,255,0.35);
+    border-color: rgba(0,0,0,0.12);
+    outline: none;
+  }
+
+  .explorer-cell-icon {
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .explorer-cell-name {
+    max-width: 100%;
+    font: var(--fs-xs) var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .explorer-cell-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+    color: var(--win-text);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .explorer-cell-wrap:hover .explorer-cell-remove,
+  .explorer-cell-remove:focus-visible {
+    opacity: 1;
   }
 }

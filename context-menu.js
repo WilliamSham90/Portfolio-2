@@ -13,7 +13,8 @@
    too; this only affects the right-click menu itself.
    ===================================================================== */
 
-import { createFolder } from './folders.js';
+import { createFolder, getFolder, deleteFolder } from './folders.js';
+import { confirmDialog } from './confirm-dialog.js';
 
 function launchApp(id) {
   document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id } }));
@@ -21,6 +22,18 @@ function launchApp(id) {
 
 function renameFolderPrompt(id) {
   document.dispatchEvent(new CustomEvent('os:rename-folder', { detail: { id } }));
+}
+
+async function deleteFolderPrompt(id) {
+  const folder = getFolder(id);
+  if (!folder) return;
+
+  const count = folder.appIds.length;
+  const message = count > 0
+    ? `Delete “${folder.name}”? ${count} app${count === 1 ? '' : 's'} inside will move back to the desktop.`
+    : `Delete “${folder.name}”?`;
+
+  if (await confirmDialog(message)) deleteFolder(id);
 }
 
 const DESKTOP_ITEMS = [
@@ -40,6 +53,7 @@ function folderItems(folderId) {
   return [
     { icon: '📂', label: 'Open', run: () => document.dispatchEvent(new CustomEvent('os:open-folder', { detail: { id: folderId } })) },
     { icon: '✏️', label: 'Rename', run: () => renameFolderPrompt(folderId) },
+    { icon: '🗑️', label: 'Delete', run: () => deleteFolderPrompt(folderId) },
   ];
 }
 

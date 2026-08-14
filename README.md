@@ -11,6 +11,7 @@ Portfolio/
 ├── theme.js                  the "theme kernel" — applies a theme's colors/font to :root
 ├── folders.js                the "folders kernel" — desktop folders are virtual (see "Folders")
 ├── context-menu.js           replaces the right-click menu (see "Right-click menu")
+├── confirm-dialog.js          themed window.confirm() replacement, used before deleting a folder
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -187,14 +188,26 @@ Desktop folders and the File Explorer ("My Computer") work together:
   an `<input>` nested inside the icon's `<button>` — the latter is invalid
   HTML and browsers get flaky about focus/selection when you do it anyway
   (see `startRename()` in `widget/app-grid/index.js`).
+- **Deleting a folder**: right-click → Delete asks for confirmation first
+  (`confirm-dialog.js` — a themed stand-in for `window.confirm()`, since a
+  bare browser dialog would clash with the rest of the UI) and mentions
+  how many apps are inside, if any. Deleting doesn't touch what was filed
+  inside it — `deleteFolder()` just removes the folder itself, and since
+  the desktop only ever *excludes* an app because some existing folder's
+  `appIds` claims it (see `visibleItems()` in `widget/app-grid`), every
+  app that was inside reappears on the desktop on its own, no extra
+  "move it back" step needed.
 - **My Computer** is a completely ordinary app (`apps/file-explorer/`, in
   `APPS` like any other) — draggable, filable into a folder, etc. It's a
   two-pane window: a left sidebar lists your folders and the read-only
   `assets/` library (Images/Music/Videos/PDF/Fonts, from
-  `assets/manifest.js`); clicking one shows its contents on the right.
-  Clicking a PDF/image/audio/video file opens it in a new tab and lets
-  the browser's own viewer handle it — no custom player yet. **Fonts**
-  just lists the family names (nothing to open — see "Theme fonts").
+  `assets/manifest.js`); clicking one shows its contents on the right,
+  as either a grid (default) or a list — the toggle button, top-right of
+  that pane, remembers nothing between openings on purpose, it's a small
+  per-window preference, not worth a `localStorage` key. Clicking a
+  PDF/image/audio/video file opens it in a new tab and lets the browser's
+  own viewer handle it — no custom player yet. **Fonts** just lists the
+  family names (nothing to open — see "Theme fonts").
 - Deliberately out of scope for now (all easy to add later, on top of
   the same pieces above): nested folders and the custom-skinned
   music/image/video players — those need their own focused design pass
@@ -204,12 +217,12 @@ Desktop folders and the File Explorer ("My Computer") work together:
 
 `context-menu.js` swaps the browser's native right-click menu for the
 OS's own, everywhere on the page. What it shows depends on the target:
-right-clicking a folder icon gets Open/Rename; anywhere else gets the
-general desktop menu (New Folder / My Computer / Settings — the last one
-just opens the Themes app for now, there's no separate Settings app yet).
-To add a menu item, add one `{icon, label, run}` entry to `DESKTOP_ITEMS`
-(or `folderItems()`) in `context-menu.js` — same shape as `APPS` in
-`main.js`.
+right-clicking a folder icon gets Open/Rename/Delete; anywhere else gets
+the general desktop menu (New Folder / My Computer / Settings — the last
+one just opens the Themes app for now, there's no separate Settings app
+yet). To add a menu item, add one `{icon, label, run}` entry to
+`DESKTOP_ITEMS` (or `folderItems()`) in `context-menu.js` — same shape as
+`APPS` in `main.js`.
 
 **Shift+right-click still opens the real browser menu** — the handler
 checks `event.shiftKey` and simply doesn't call `preventDefault()` when

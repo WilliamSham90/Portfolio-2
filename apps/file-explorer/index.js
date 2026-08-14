@@ -10,6 +10,12 @@ const CATEGORIES = [
   { key: 'fonts', name: 'Fonts', icon: '🔤' },
 ];
 
+const VIEW_TOGGLE = {
+  // shows the icon/label for the view you'd SWITCH TO, not the current one
+  grid: { icon: '☰', label: 'Switch to list view' },
+  list: { icon: '▦', label: 'Switch to grid view' },
+};
+
 /**
  * Called by loader.js after this app's HTML is mounted.
  * @param {HTMLElement} container  this app instance's own root element
@@ -19,9 +25,11 @@ export function init(container, folderId) {
   const sidebarEl = container.querySelector('.explorer-sidebar');
   const titleEl = container.querySelector('.explorer-main-title');
   const listEl = container.querySelector('.explorer-list');
+  const viewToggleEl = container.querySelector('.explorer-view-toggle');
 
   // { type: 'folder', id } | { type: 'category', key } | null (nothing selected yet)
   let selected = folderId ? { type: 'folder', id: folderId } : null;
+  let viewMode = 'grid'; // default, per-window (not persisted between opens)
 
   function select(next) {
     selected = next;
@@ -31,6 +39,11 @@ export function init(container, folderId) {
   function isSelected(type, key) {
     return selected?.type === type && (type === 'folder' ? selected.id === key : selected.key === key);
   }
+
+  viewToggleEl.addEventListener('click', () => {
+    viewMode = viewMode === 'grid' ? 'list' : 'grid';
+    renderMain();
+  });
 
   function render() {
     renderSidebar();
@@ -66,6 +79,9 @@ export function init(container, folderId) {
 
   function renderMain() {
     listEl.replaceChildren();
+    listEl.classList.toggle('is-grid', viewMode === 'grid');
+    viewToggleEl.textContent = VIEW_TOGGLE[viewMode].icon;
+    viewToggleEl.setAttribute('aria-label', VIEW_TOGGLE[viewMode].label);
 
     if (selected?.type === 'folder' && !getFolder(selected.id)) selected = null; // folder got deleted/emptied elsewhere
 
@@ -94,15 +110,15 @@ export function init(container, folderId) {
     for (const appId of folder.appIds) {
       const app = APPS.find((a) => a.id === appId);
       if (!app) continue;
-      const r = row({ icon: app.icon, name: app.name, removable: true });
-      r.mainEl.addEventListener('click', () => {
+      const entry = makeEntry(viewMode, { icon: app.icon, name: app.name, removable: true });
+      entry.mainEl.addEventListener('click', () => {
         document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id: app.id } }));
       });
-      r.removeEl.addEventListener('click', (event) => {
+      entry.removeEl.addEventListener('click', (event) => {
         event.stopPropagation();
         removeAppFromFolder(app.id, folder.id);
       });
-      listEl.appendChild(r.el);
+      listEl.appendChild(entry.el);
     }
   }
 
@@ -116,14 +132,14 @@ export function init(container, folderId) {
     // else opens in a new tab and lets the browser's native viewer handle it
     const openable = cat.key !== 'fonts';
     for (const file of files) {
-      const r = row({ icon: cat.icon, name: file.name, kind: openable ? 'default' : 'static' });
+      const entry = makeEntry(viewMode, { icon: cat.icon, name: file.name, kind: openable ? 'default' : 'static' });
       if (openable) {
-        r.mainEl.addEventListener('click', () => {
+        entry.mainEl.addEventListener('click', () => {
           const url = new URL(`../../assets/${cat.key}/${file.file}`, import.meta.url);
           window.open(url, '_blank');
         });
       }
-      listEl.appendChild(r.el);
+      listEl.appendChild(entry.el);
     }
   }
 
@@ -153,8 +169,12 @@ function sidebarItem({ icon, name, active, onClick }) {
   return btn;
 }
 
+function makeEntry(viewMode, options) {
+  return viewMode === 'grid' ? cell(options) : row(options);
+}
+
 /**
- * One row in the right-hand list. `kind: 'static'` renders a plain,
+ * One row in the right-hand *list* view. `kind: 'static'` renders a plain,
  * non-interactive row (no button semantics) for entries that don't do
  * anything yet (fonts).
  */
@@ -179,6 +199,33 @@ function row({ icon, name, kind = 'default', removable = false }) {
     removeEl.setAttribute('aria-label', `Remove ${name} from this folder`);
     removeEl.textContent = '✕';
     el.appendChild(removeEl);
+  }
+
+  return { el, mainEl, removeEl };
+}
+
+/** Same shape as row(), for the right-hand *grid* view. */
+function cell({ icon, name, kind = 'default', removable = false }) {
+  const el = document.createElement('div');
+  el.className = 'explorer-cell-wrap';
+
+  const mainEl = document.createElement(kind === 'static' ? 'div' : 'button');
+  if (mainEl.tagName === 'BUTTON') mainEl.type = 'button';
+  mainEl.className = 'explorer-cell';
+  mainEl.innerHTML = `
+    <span class="explorer-cell-icon">${icon}</span>
+    <span class="explorer-cell-name">${name}</span>
+  `;
+  el.appendChild(mainEl);
+
+  let removeEl = null;
+  if (removable) {
+    removeEl = document.createElement('button');
+    removeEl.type = 'button';
+    removeEl.className = 'explorer-cell-remove';
+    removeEl.setAttribute('aria-label', `Remove ${name} from this folder`);
+    removeEl.textContent = '✕';
+    el.appendChild(removeEl); // sibling of mainEl, not nested inside it — see index.css note
   }
 
   return { el, mainEl, removeEl };
