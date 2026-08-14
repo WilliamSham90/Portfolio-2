@@ -38,7 +38,6 @@
         <span class="taskbar-clock-time"></span>
         <span class="taskbar-clock-date"></span>
       </button>
-      <button type="button" id="system-info-button" class="taskbar-icon-button" aria-label="System info">&#8943;</button>
     </nav>
 
   </div>
@@ -76,7 +75,11 @@
     <div class="clock-panel-time"></div>
     <div class="clock-panel-date"></div>
     <div class="clock-panel-calendar">
-      <div class="clock-panel-cal-month"></div>
+      <div class="clock-panel-cal-header">
+        <button type="button" class="clock-panel-cal-nav clock-panel-cal-prev" aria-label="Previous month">&#8249;</button>
+        <span class="clock-panel-cal-month"></span>
+        <button type="button" class="clock-panel-cal-nav clock-panel-cal-next" aria-label="Next month">&#8250;</button>
+      </div>
       <div class="clock-panel-cal-grid"></div>
     </div>
   </div>

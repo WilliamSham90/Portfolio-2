@@ -153,9 +153,14 @@ body {
   inset: 0;
   pointer-events: none; /* empty layer shouldn't block clicks on the grid */
 }
-#popup-layer > * {
-  pointer-events: auto; /* but an actual open window should */
-}
+/* loader.js's per-widget wrapper (.widget-instance, main.css above) is
+   sized to fill this whole layer, but the actual visible window inside it
+   (.popup-window) is absolutely positioned and usually much smaller — so
+   pointer-events: auto belongs on .popup-window itself (widget/popup/
+   index.css), not here. Putting it here instead, on every full-size
+   wrapper, was a real bug: with one window open, its invisible full-desktop
+   wrapper sat on top of the whole grid and swallowed clicks on every icon
+   outside that window's own borders, not just inside them. */
 
 /* ---------- TASKBAR (bottom, always present) ---------- */
 #taskbar {
@@ -226,27 +231,6 @@ body {
 .taskbar-clock-button.is-active {
   background: var(--glass);
   border-color: var(--glass-border);
-  outline: none;
-}
-
-.taskbar-icon-button {
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
-  background: var(--glass);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-}
-.taskbar-icon-button:hover,
-.taskbar-icon-button:focus-visible,
-.taskbar-icon-button.is-active {
-  background: rgba(255,255,255,0.25);
   outline: none;
 }
 
@@ -612,12 +596,37 @@ body {
   padding-top: 14px;
   border-top: 1px solid var(--glass-border);
 }
-.clock-panel-cal-month {
+.clock-panel-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   margin-bottom: 10px;
+}
+.clock-panel-cal-month {
   font: var(--fs-sm) var(--font-mono);
   color: var(--text);
   letter-spacing: 0.5px;
   text-align: center;
+}
+.clock-panel-cal-nav {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.clock-panel-cal-nav:hover,
+.clock-panel-cal-nav:focus-visible {
+  background: var(--glass);
+  outline: none;
 }
 .clock-panel-cal-grid {
   display: grid;
@@ -645,6 +654,14 @@ body {
 .clock-panel-cal-day.is-today {
   background: rgba(var(--hotrose-rgb), 0.5);
   font-weight: 700;
+}
+/* a ring rather than a fill — so a holiday that's also today (is-today's
+   own solid fill) still reads as both at once instead of one hiding the
+   other; the name itself is a native title-attribute tooltip, see
+   clock-panel.js, not something that fits in a cell this small */
+.clock-panel-cal-day.is-holiday {
+  box-shadow: inset 0 0 0 2px rgba(var(--aqua-rgb), 0.85);
+  cursor: default;
 }
 .clock-panel-cal-day.is-empty {
   visibility: hidden;

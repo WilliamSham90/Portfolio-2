@@ -5,6 +5,11 @@
     left: 80px;
     min-width: 320px;
     max-width: min(600px, 90vw);
+    /* the wrapper this sits inside (.widget-instance, loader.js) fills the
+       whole desktop and inherits pointer-events: none from #popup-layer
+       (main.css) — re-enabled here so the window itself is still fully
+       clickable without that wrapper blocking clicks anywhere else */
+    pointer-events: auto;
     /* flex column, not just stacked blocks — this is what lets .popup-body
        actually fill whatever height the window ends up with (maximized or
        manually resized) instead of staying content-sized and leaving an

@@ -32,10 +32,19 @@ export const APPS = [
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
-// not a desktop icon or a Start Menu entry — only ever opened from the
-// clock area's "..." button (see initSystemInfo below) — so it lives
-// outside APPS rather than in it.
-const SYSTEM_INFO_APP = { id: 'system-info', name: 'System Info', icon: icon('menu.png'), path: './apps/system-info/' };
+// not a desktop icon — only reachable from the Start Menu — so it lives
+// outside APPS (which also drives the desktop grid) rather than in it.
+const SYSTEM_INFO_APP = { id: 'system-info', name: 'System Info', icon: icon('information.png'), path: './apps/system-info/' };
+
+// every app os:launch-app might need to resolve an id back to, whether or
+// not it's also a desktop icon (APPS)
+const ALL_APPS = [...APPS, SYSTEM_INFO_APP];
+
+// the Start Menu shows a curated, specifically-ordered subset of ALL_APPS
+// rather than APPS itself — no Hello There (a placeholder app, not meant
+// to be "installed"), plus System Info (not a desktop icon at all)
+const START_MENU_APPS = ['my-computer', 'browser', 'settings', 'system-info']
+  .map((id) => ALL_APPS.find((a) => a.id === id));
 
 // tracks every currently-open window: popup root element -> its taskbar tab
 const openWindows = new Map();
@@ -46,15 +55,17 @@ async function boot() {
   initTheme();
   initContextMenu();
   initPower();
-  initStartMenu(APPS);
+  initStartMenu(START_MENU_APPS);
 
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');
   await loadWidget('./widget/app-grid/', gridRoot, { initArgs: [APPS] });
 
-  // 2. whenever an icon is clicked, the app-grid widget fires this event
+  // 2. whenever an icon is clicked, the app-grid widget fires this event —
+  //    also how the Start Menu launches an app (including System Info,
+  //    which isn't a desktop icon, hence ALL_APPS rather than APPS here)
   document.addEventListener('os:launch-app', (event) => {
-    const app = APPS.find((a) => a.id === event.detail.id);
+    const app = ALL_APPS.find((a) => a.id === event.detail.id);
     if (app) openApp(app);
   });
 
@@ -81,13 +92,6 @@ async function boot() {
 
   // 4. taskbar clock + its slide-in date/calendar panel
   initClockPanel();
-
-  // 5. the "..." button next to the clock opens the System Info window —
-  //    not a real desktop/Start Menu app (see SYSTEM_INFO_APP above), so
-  //    it's opened directly rather than going through os:launch-app
-  document.getElementById('system-info-button').addEventListener('click', () => {
-    openApp(SYSTEM_INFO_APP);
-  });
 }
 
 let openCount = 0;

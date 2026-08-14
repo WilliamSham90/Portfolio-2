@@ -79,7 +79,7 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── system-info/               opened from the taskbar's "..." button, not APPS (see "Taskbar clock")
+    └── system-info/               Start Menu only, not on the desktop — not in APPS (see "System Info")
         ├── index.html
         ├── index.css
         └── index.js
@@ -356,15 +356,24 @@ Ctrl+Shift+I) were never intercepted in the first place.
 ## Start menu
 
 `js/start-menu.js` is the taskbar's left-side Start button (`app-store.png`)
-and its dropdown. It's initialized as `initStartMenu(APPS)` from
+and its dropdown. It's initialized as `initStartMenu(START_MENU_APPS)` from
 `js/main.js`'s `boot()` — receiving the app list as a parameter rather than
-importing `APPS` back from `main.js` itself, since `main.js` already
-imports `start-menu.js`; importing it the other way round would be a
-circular import, and depending on evaluation order could hit `APPS` before
-its `const` is initialized. The dropdown lists every app (same icon-or-emoji
-rendering as everywhere else, via `js/icon.js`) — clicking one fires
-`os:launch-app`, same event a desktop icon click fires — plus a Power off
-button at the bottom. It closes on outside-click, Escape, or launching an app.
+importing it back from `main.js` itself, since `main.js` already imports
+`start-menu.js`; importing it the other way round would be a circular
+import, and depending on evaluation order could hit that list before its
+`const` is initialized. `START_MENU_APPS` (`js/main.js`) is a specific,
+curated, *ordered* subset — **My Computer, Browser, Settings, System
+Info** — not `APPS` itself: no Hello There (a placeholder/demo app, not
+meant to look "installed"), plus **System Info**, which isn't a desktop
+icon at all and exists only as this one entry. Since it's not in `APPS`
+(which also drives the desktop grid), `js/main.js` keeps a second list,
+`ALL_APPS` (`[...APPS, SYSTEM_INFO_APP]`), for `os:launch-app` to resolve
+an id against — otherwise clicking System Info in the menu would fire the
+same event every other app click does, and `main.js` wouldn't be able to
+find it. The dropdown lists each app (same icon-or-emoji rendering as
+everywhere else, via `js/icon.js`) — clicking one fires `os:launch-app`,
+same event a desktop icon click fires — plus a Power off button at the
+bottom. It closes on outside-click, Escape, or launching an app.
 
 **Power off** (`js/power.js`) asks for confirmation first
 (`js/confirm-dialog.js`, same as deleting a folder), then shows
@@ -380,38 +389,50 @@ just an overlay sitting on top.
 
 ## Taskbar clock
 
-The taskbar's right edge is `#taskbar-clock-button` (time + date, ticking
-every 15s — plenty for a clock with no seconds hand) and, next to it, an
-unrelated "..." button (`#system-info-button`) — the two look like one
-cluster but are otherwise independent.
+`#taskbar-clock-button` (`js/clock-panel.js`) is the taskbar's right edge —
+time on top, date underneath, ticking every 15s (plenty for a clock with
+no seconds hand). Clicking it slides `#clock-panel` in from the right
+edge — a fixed panel showing the time, the full date, and a calendar.
+Unlike `.start-menu`/`.context-menu`, which just pop in with `hidden`
+toggled and no motion, this one actually animates: it stays in the DOM
+transformed off-screen (`transform: translateX(calc(100% + 24px))`) and
+slides to `translateX(0)` on open, same "toggle `hidden` off, force a
+reflow, *then* add the class that starts the transition" sequence
+`power.js` uses for its overlay — closing does the same in reverse, but
+waits out the transition's own 300ms (a `clearTimeout`-guarded timer, so
+spamming the button can't leave a stale timer hiding a panel that just
+got re-opened) before setting `hidden` back, so it only leaves the a11y
+tree once it's actually gone, not the moment it starts sliding away.
 
-- **Clicking the clock** (`js/clock-panel.js`) slides `#clock-panel` in
-  from the right edge — a fixed panel showing the time, the full date, and
-  a read-only calendar of the current month (today highlighted). Unlike
-  `.start-menu`/`.context-menu`, which just pop in with `hidden` toggled
-  and no motion, this one actually animates: it stays in the DOM
-  transformed off-screen (`transform: translateX(calc(100% + 24px))`) and
-  slides to `translateX(0)` on open, same "toggle `hidden` off, force a
-  reflow, *then* add the class that starts the transition" sequence
-  `power.js` uses for its overlay — closing does the same in reverse, but
-  waits out the transition's own 300ms (a `clearTimeout`-guarded timer, so
-  spamming the button can't leave a stale timer hiding a panel that just
-  got re-opened) before setting `hidden` back, so it only leaves the a11y
-  tree once it's actually gone, not the moment it starts sliding away.
-- **Clicking "..."** opens a **System Info** window — `apps/system-info/`,
-  a normal app in every way *except* it's launched directly
-  (`openApp(SYSTEM_INFO_APP)` in `js/main.js`) instead of through
-  `os:launch-app`, because it isn't in `APPS`: no desktop icon, no Start
-  Menu entry, only ever reachable from this one button. It's a
-  neofetch-styled "about me" card — profile photo (`williampp.jpg`) and a
-  `user@williams-os` heading, OS/host/role/location facts styled as
-  key/value rows, a skills list styled as package tags, and a
-  `two-hearts.png` sign-off — real bio content dressed up as system info
-  rather than an actual system reading anything real. Both `williampp.jpg`
-  and `two-hearts.png` are resolved in `index.js` via `import.meta.url`
-  rather than written as a plain `src` in `index.html`, same reason every
-  other icon does: a relative URL sitting in static HTML resolves against
-  the *page's* URL once that HTML is injected, not this folder's.
+The calendar is browsable, not a static snapshot: `‹`/`›` step
+`viewYear`/`viewMonth` (module-local state, independent of the clock's
+own "now") a month at a time, rolling over into the next/previous year at
+the edges for free since it's just `month -= 1; if (month < 0) { month =
+11; year -= 1; }`. Every render also marks South African public holidays
+— `southAfricaHolidays(year)` returns the ten fixed-date ones plus the two
+Easter-based ones (Good Friday, Family Day), Good Friday/Family Day's own
+date found via the Meeus/Jones/Butcher algorithm rather than a hard-coded
+table (so browsing into any year, not just this one, still gets them
+right), plus the "falls on a Sunday → the following Monday is also a
+holiday" rule South African law adds on top. A holiday shows as a ring
+around that day (`.is-holiday`, `--aqua`) rather than a filled circle like
+`.is-today` (`--hotrose`) specifically so a day that's *both* still shows
+both instead of one hiding the other; the holiday's name is a native
+`title` tooltip — there's no room in a cell this small for real text.
+
+## System Info
+
+**System Info** (`apps/system-info/`) is a normal app in every way except
+it isn't in `APPS` (see "Start menu" above for how `js/main.js` still
+resolves it) — a neofetch-styled "about me" card: profile photo
+(`williampp.jpg`) and a `user@williams-os` heading, OS/host/role/location
+facts styled as key/value rows, a skills list styled as package tags, and
+a `two-hearts.png` sign-off — real bio content dressed up as system info
+rather than an actual system reading anything real. Both `williampp.jpg`
+and `two-hearts.png` are resolved in `index.js` via `import.meta.url`
+rather than written as a plain `src` in `index.html`, same reason every
+other icon does: a relative URL sitting in static HTML resolves against
+the *page's* URL once that HTML is injected, not this folder's.
 
 ## Adding a new app later
 
@@ -563,6 +584,19 @@ command line) is the standard way — but it's optional, not required.
   the tab of the window that's already active minimizes it instead — the
   same toggle either way, `popup:toggle-minimize`, decided by
   `js/main.js`'s tab click handler based on the tab's current classes.
+- **`pointer-events` lives on `.popup-window`, not on `#popup-layer`'s
+  children generally.** loader.js's per-widget wrapper (`.widget-instance`)
+  is sized to fill the *entire* desktop, even though the actual visible
+  window (`.popup-window`) inside it, absolutely positioned, is usually
+  much smaller — a real bug once had `#popup-layer > *` (i.e. that
+  full-size wrapper) re-enabling `pointer-events` instead of the window
+  itself, so with any window open, its invisible full-desktop wrapper sat
+  on top of the whole icon grid and swallowed clicks on every icon
+  *outside* that window's own borders too, not just inside them. Fixed by
+  moving `pointer-events: auto` onto `.popup-window` itself
+  (`widget/popup/index.css`) and leaving the wrapper (and `#popup-layer`)
+  at `none` — worth remembering if a future full-size layer/wrapper ever
+  needs the same treatment.
 
 ## Roadmap (not built yet, on purpose)
 
