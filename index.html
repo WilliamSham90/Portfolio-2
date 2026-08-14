@@ -31,10 +31,14 @@
       <button type="button" id="start-button" aria-label="Start menu" aria-haspopup="true">
         <img src="./assets/system/Icons/basic/app-store.png" alt="" draggable="false">
       </button>
-      <div id="taskbar-brand">my-os</div>
       <!-- main.js appends one .taskbar-tab button per open app here -->
       <div id="taskbar-tabs"></div>
-      <div id="taskbar-clock"></div>
+      <!-- clock-panel.js -->
+      <button type="button" id="taskbar-clock-button" class="taskbar-clock-button" aria-haspopup="true">
+        <span class="taskbar-clock-time"></span>
+        <span class="taskbar-clock-date"></span>
+      </button>
+      <button type="button" id="system-info-button" class="taskbar-icon-button" aria-label="System info">&#8943;</button>
     </nav>
 
   </div>
@@ -64,6 +68,16 @@
         <img src="./assets/system/Icons/basic/power-button.png" alt="" draggable="false">
         <span>Power off</span>
       </button>
+    </div>
+  </div>
+
+  <!-- clock-panel.js's slide-in time/date/calendar panel -->
+  <div id="clock-panel" class="clock-panel" hidden>
+    <div class="clock-panel-time"></div>
+    <div class="clock-panel-date"></div>
+    <div class="clock-panel-calendar">
+      <div class="clock-panel-cal-month"></div>
+      <div class="clock-panel-cal-grid"></div>
     </div>
   </div>
 

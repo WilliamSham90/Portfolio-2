@@ -1,0 +1,117 @@
+@scope (.sysinfo-app) {
+  :scope {
+    width: min(420px, 80vw);
+    padding: 4px 2px;
+    font-family: var(--font-main);
+    color: var(--win-text);
+  }
+
+  .sysinfo-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .sysinfo-avatar {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(var(--hotrose-rgb), 0.6);
+  }
+
+  .sysinfo-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .sysinfo-user {
+    font: 600 var(--fs-md) var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+  .sysinfo-at {
+    color: var(--hotrose);
+  }
+
+  .sysinfo-tagline {
+    font: var(--fs-sm) var(--font-main);
+    opacity: 0.75;
+  }
+
+  .sysinfo-rule {
+    margin: 14px 0;
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .sysinfo-facts {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sysinfo-fact {
+    display: flex;
+    gap: 10px;
+    font: var(--fs-sm) var(--font-mono);
+  }
+  .sysinfo-fact dt {
+    flex: 0 0 78px;
+    color: var(--hotrose);
+    font-weight: 600;
+  }
+  .sysinfo-fact dd {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .sysinfo-about {
+    margin: 14px 0 0;
+    font: var(--fs-sm) var(--font-main);
+    line-height: 1.55;
+    opacity: 0.85;
+  }
+
+  .sysinfo-packages {
+    margin-top: 16px;
+  }
+  .sysinfo-packages-label {
+    display: block;
+    margin-bottom: 8px;
+    font: var(--fs-xs) var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+  }
+  .sysinfo-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sysinfo-tag {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: rgba(255,255,255,0.3);
+    font: var(--fs-xs) var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .sysinfo-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 18px 0 4px;
+    font: var(--fs-sm) var(--font-main);
+    opacity: 0.75;
+  }
+  .sysinfo-heart {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+}

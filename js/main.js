@@ -10,20 +10,32 @@ import { initTheme } from './theme.js';
 import { initContextMenu } from './context-menu.js';
 import { initStartMenu } from './start-menu.js';
 import { initPower } from './power.js';
+import { initClockPanel } from './clock-panel.js';
 import { isImageIcon } from './icon.js';
 
-// placeholder icon for every app until real ones are ready — see
+function icon(filename) {
+  return new URL(`../assets/system/Icons/basic/${filename}`, import.meta.url).href;
+}
+
+// placeholder icon for apps that don't have a real one yet — see
 // README.md > "Adding a new app later"
-const APP_ICON = new URL('../assets/system/Icons/basic/add.png', import.meta.url).href;
-const BROWSER_ICON = new URL('../assets/system/Icons/basic/earth.png', import.meta.url).href;
+const APP_ICON = icon('add.png');
+const BROWSER_ICON = icon('earth.png');
+const SETTINGS_ICON = icon('settings.png');
+const COMPUTER_ICON = icon('computer-storage.png');
 
 export const APPS = [
   { id: 'hello-world', name: 'Hello There', icon: APP_ICON, path: './apps/hello-world/' },
-  { id: 'settings', name: 'Settings', icon: APP_ICON, path: './apps/themes/' },
-  { id: 'my-computer', name: 'My Computer', icon: APP_ICON, path: './apps/file-explorer/' },
+  { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
+  { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
+
+// not a desktop icon or a Start Menu entry — only ever opened from the
+// clock area's "..." button (see initSystemInfo below) — so it lives
+// outside APPS rather than in it.
+const SYSTEM_INFO_APP = { id: 'system-info', name: 'System Info', icon: icon('menu.png'), path: './apps/system-info/' };
 
 // tracks every currently-open window: popup root element -> its taskbar tab
 const openWindows = new Map();
@@ -67,13 +79,15 @@ async function boot() {
     if (event.detail.minimized) tab.classList.remove('is-active');
   });
 
-  // 4. taskbar clock
-  const clockEl = document.getElementById('taskbar-clock');
-  const tick = () => {
-    clockEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-  tick();
-  setInterval(tick, 1000 * 15);
+  // 4. taskbar clock + its slide-in date/calendar panel
+  initClockPanel();
+
+  // 5. the "..." button next to the clock opens the System Info window —
+  //    not a real desktop/Start Menu app (see SYSTEM_INFO_APP above), so
+  //    it's opened directly rather than going through os:launch-app
+  document.getElementById('system-info-button').addEventListener('click', () => {
+    openApp(SYSTEM_INFO_APP);
+  });
 }
 
 let openCount = 0;

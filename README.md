@@ -22,7 +22,8 @@ Portfolio/
 │   ├── icon.js                  isImageIcon() — one shared image-vs-emoji icon check (see "Icons")
 │   ├── icon-style.js             the "icon style kernel" — blue/yellow folder icons (see "Icons")
 │   ├── start-menu.js             the taskbar's Start button + its dropdown (see "Start menu")
-│   └── power.js                  the shut-down/boot-up overlay (see "Start menu")
+│   ├── power.js                  the shut-down/boot-up overlay (see "Start menu")
+│   └── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -74,7 +75,11 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── browser/                  iframe + address bar (see "Adding a new app later")
+    ├── browser/                  iframe + address bar (see "Adding a new app later")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    └── system-info/               opened from the taskbar's "..." button, not APPS (see "Taskbar clock")
         ├── index.html
         ├── index.css
         └── index.js
@@ -195,10 +200,19 @@ tells which it's looking at and renders an `<img>` instead of a `<span>`
 accordingly, rather than each of them needing their own check or an extra
 flag threaded through the data.
 
-- **App icons** are all `assets/system/Icons/basic/add.png` for now — a
-  shared placeholder, not a mistake — until real per-app icons are ready
-  to swap in (in `APPS`, in `js/main.js`). **Browser**'s is fixed to
-  `earth.png` instead of the old per-browser-detected icon.
+- **App icons** are set per app in `APPS` (`js/main.js`): `settings.png`,
+  `computer-storage.png`, `earth.png` (**Browser**, fixed — no more
+  per-browser-detected icon). **Hello There** still uses `add.png` as a
+  placeholder until it has a real one of its own.
+- Every icon `<img>` is written with `draggable="false"` — without it, a
+  browser's own native image-drag (the "drag to save/copy this picture"
+  gesture, on by default for every `<img>`) fights the desktop's own
+  pointer-based drag-to-reposition system for the same gesture, and wins:
+  the icon never actually moves. Real bug, hit once when the desktop grid's
+  emoji glyphs first became `<img>`s — any *new* icon `<img>` needs this
+  attribute too, not just the ones on the desktop grid itself, since it's
+  cheap insurance against the same class of bug anywhere else an icon
+  might one day become draggable content.
 - **Folder icons** are the one style-*switchable* icon — `js/icon-style.js`
   (same shared-kernel shape as `js/theme.js`) owns whether `assets/system/Icons/blue folders/`
   or `yellow folders/` is active (default **yellow**), persists it, and
@@ -363,6 +377,41 @@ character into a `<pre>` (monospace, green-on-black, with a blinking-cursor
 `::after`), then the overlay fades back out to reveal the desktop —
 exactly as it was, since nothing was actually torn down, the whole thing is
 just an overlay sitting on top.
+
+## Taskbar clock
+
+The taskbar's right edge is `#taskbar-clock-button` (time + date, ticking
+every 15s — plenty for a clock with no seconds hand) and, next to it, an
+unrelated "..." button (`#system-info-button`) — the two look like one
+cluster but are otherwise independent.
+
+- **Clicking the clock** (`js/clock-panel.js`) slides `#clock-panel` in
+  from the right edge — a fixed panel showing the time, the full date, and
+  a read-only calendar of the current month (today highlighted). Unlike
+  `.start-menu`/`.context-menu`, which just pop in with `hidden` toggled
+  and no motion, this one actually animates: it stays in the DOM
+  transformed off-screen (`transform: translateX(calc(100% + 24px))`) and
+  slides to `translateX(0)` on open, same "toggle `hidden` off, force a
+  reflow, *then* add the class that starts the transition" sequence
+  `power.js` uses for its overlay — closing does the same in reverse, but
+  waits out the transition's own 300ms (a `clearTimeout`-guarded timer, so
+  spamming the button can't leave a stale timer hiding a panel that just
+  got re-opened) before setting `hidden` back, so it only leaves the a11y
+  tree once it's actually gone, not the moment it starts sliding away.
+- **Clicking "..."** opens a **System Info** window — `apps/system-info/`,
+  a normal app in every way *except* it's launched directly
+  (`openApp(SYSTEM_INFO_APP)` in `js/main.js`) instead of through
+  `os:launch-app`, because it isn't in `APPS`: no desktop icon, no Start
+  Menu entry, only ever reachable from this one button. It's a
+  neofetch-styled "about me" card — profile photo (`williampp.jpg`) and a
+  `user@williams-os` heading, OS/host/role/location facts styled as
+  key/value rows, a skills list styled as package tags, and a
+  `two-hearts.png` sign-off — real bio content dressed up as system info
+  rather than an actual system reading anything real. Both `williampp.jpg`
+  and `two-hearts.png` are resolved in `index.js` via `import.meta.url`
+  rather than written as a plain `src` in `index.html`, same reason every
+  other icon does: a relative URL sitting in static HTML resolves against
+  the *page's* URL once that HTML is injected, not this folder's.
 
 ## Adding a new app later
 

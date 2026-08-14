@@ -197,14 +197,57 @@ body {
   outline: none;
 }
 
-#taskbar-brand {
+/* clock-panel.js's taskbar button + the "..." system-info button beside it */
+.taskbar-clock-button {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  text-align: right;
+}
+.taskbar-clock-time {
   color: var(--text);
 }
+.taskbar-clock-date {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+}
+.taskbar-clock-button:hover,
+.taskbar-clock-button:focus-visible,
+.taskbar-clock-button.is-active {
+  background: var(--glass);
+  border-color: var(--glass-border);
+  outline: none;
+}
 
-#taskbar-clock {
+.taskbar-icon-button {
   flex-shrink: 0;
-  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: var(--glass);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.taskbar-icon-button:hover,
+.taskbar-icon-button:focus-visible,
+.taskbar-icon-button.is-active {
+  background: rgba(255,255,255,0.25);
+  outline: none;
 }
 
 /* one button per open window, appended/removed by main.js */
@@ -523,4 +566,86 @@ body {
 }
 @keyframes power-cursor-blink {
   50% { opacity: 0; }
+}
+
+/* ---------- CLOCK PANEL (clock-panel.js) ---------- */
+.clock-panel {
+  position: fixed;
+  z-index: 1000; /* same tier as .start-menu — only one flyout is ever open at once */
+  right: 12px;
+  bottom: calc(var(--taskbar-height) + 8px);
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+  /* off to the right, past its own width, so it's fully out of view (not
+     just invisible) while closed — matches the "slides in from the edge"
+     ask, unlike .start-menu/.context-menu which just pop in with no motion */
+  transform: translateX(calc(100% + 24px));
+  transition: transform 0.3s ease;
+}
+.clock-panel[hidden] {
+  display: none;
+}
+.clock-panel.is-open {
+  transform: translateX(0);
+}
+
+.clock-panel-time {
+  font: 32px var(--font-mono);
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.clock-panel-date {
+  margin-top: 2px;
+  font: var(--fs-sm) var(--font-main);
+  color: var(--text-soft);
+}
+
+.clock-panel-calendar {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--glass-border);
+}
+.clock-panel-cal-month {
+  margin-bottom: 10px;
+  font: var(--fs-sm) var(--font-mono);
+  color: var(--text);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.clock-panel-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.clock-panel-cal-weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--fs-xs) var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding-bottom: 4px;
+}
+.clock-panel-cal-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font: var(--fs-xs) var(--font-mono);
+  color: var(--text);
+}
+.clock-panel-cal-day.is-today {
+  background: rgba(var(--hotrose-rgb), 0.5);
+  font-weight: 700;
+}
+.clock-panel-cal-day.is-empty {
+  visibility: hidden;
 }
