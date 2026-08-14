@@ -9,7 +9,7 @@
    The actual *theme* — which colors and font these tokens hold — is
    picked at runtime by theme.js (see /themes): it overwrites these same
    custom properties on :root, so nothing outside this file needs to
-   know theming exists. Default theme here is "Dial-Up Dream".
+   know theming exists. Default theme here is "Red October".
    ===================================================================== */
 
 /* ---------- reset ---------- */
@@ -26,7 +26,7 @@ button {
 }
 
 /* ---------- THEME TOKENS ----------
-   Default values = the "Dial-Up Dream" theme (themes/dial-up-dream.js).
+   Default values = the "Red October" theme (themes/red-october.js).
    theme.js overwrites all of these (plus the *-rgb triplets, used by the
    rgba() gradients/glows below) the moment a theme is applied — including
    on first load, from whatever theme was last saved. Edit here to change
@@ -34,48 +34,48 @@ button {
    theme itself. */
 :root {
   /* palette */
-  --pearl:     #dad4c9;
-  --pearl-rgb: 218, 212, 201;
-  --rose:      #ffd183;
-  --rose-rgb:  255, 209, 131;
-  --hotrose:   #eeb24a;
-  --hotrose-rgb: 238, 178, 74;
-  --aqua:      #5a8bde;
-  --aqua-rgb:  90, 139, 222;
-  --lilac:     #b89ce9;
-  --lilac-rgb: 184, 156, 233;
+  --pearl:     #ffda94;
+  --pearl-rgb: 255, 218, 148;
+  --rose:      #e69552;
+  --rose-rgb:  230, 149, 82;
+  --hotrose:   #a73e2c;
+  --hotrose-rgb: 167, 62, 44;
+  --aqua:      #ffd64a;
+  --aqua-rgb:  255, 214, 74;
+  --lilac:     #c58129;
+  --lilac-rgb: 197, 129, 41;
 
-  --text:       #dad4c9;
-  --text-soft:  #deada5;
-  --text-muted: #b89ce9;
-  --text-dark:  #272a32;
+  --text:       #ffda94;
+  --text-soft:  #eeba73;
+  --text-muted: #e69552;
+  --text-dark:  #090706;
 
-  --paper:      #dad4c9;
-  --paper-text: #272a32;
+  --paper:      #ffda94;
+  --paper-text: #090706;
 
-  --border:        #deada5;
-  --border-bright: #dad4c9;
+  --border:        #e69552;
+  --border-bright: #ffda94;
 
-  --btn-bg:   #dad4c9;
-  --btn-bg2:  #ffd183;
-  --btn-bg3:  #5a8bde;
-  --btn-text: #272a32;
+  --btn-bg:   #ffda94;
+  --btn-bg2:  #ffd64a;
+  --btn-bg3:  #eeba73;
+  --btn-text: #090706;
 
-  --win-bg:    #deada5;
-  --win-title: #dc6250;
-  --win-text:  #272a32;
+  --win-bg:    #eeba73;
+  --win-title: #732820;
+  --win-text:  #090706;
 
-  --wrap-a: #272a32;
-  --wrap-b: #21525a;
-  --wrap-c: #272a32;
+  --wrap-a: #090706;
+  --wrap-b: #1d1613;
+  --wrap-c: #332923;
 
   --glass: linear-gradient(135deg, rgba(var(--pearl-rgb),0.20), rgba(var(--aqua-rgb),0.14), rgba(var(--rose-rgb),0.16));
   --glass-border: rgba(255,255,255,0.42);
 
   /* type */
-  --font-main:   'Quicksand', 'Trebuchet MS', Arial, sans-serif;
+  --font-main:   'Architects Daughter', 'Segoe Print', 'Comic Sans MS', cursive;
   --font-mono:   'Courier New', monospace;
-  --font-accent: 'Quicksand', 'Trebuchet MS', Arial, sans-serif;
+  --font-accent: 'Architects Daughter', 'Segoe Print', 'Comic Sans MS', cursive;
 
   --fs-xs:   10px;
   --fs-sm:   12px;

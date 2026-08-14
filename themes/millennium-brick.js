@@ -32,11 +32,11 @@ export default {
 
     btnBg: '#c7f0d8',
     btnBg2: '#aa9d80',
-    btnBg3: '#4a7885',
+    btnBg3: '#c7f0d8',
     btnText: '#312b25',
 
-    winBg: '#778d90',
-    winTitle: '#aa6d3c',
+    winBg: '#c7f0d8',
+    winTitle: '#744538',
     winText: '#312b25',
 
     wrapA: '#312b25',

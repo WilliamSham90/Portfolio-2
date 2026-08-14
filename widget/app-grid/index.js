@@ -36,6 +36,16 @@ export function init(container, apps) {
     if (item && el) startRename(ctx, item, el);
   });
 
+  // part of the desktop's right-click "Reset" flow (context-menu.js) — the
+  // page gets reloaded right after, so this just needs to stop persisting
+  document.addEventListener('os:reset', () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // nothing to clean up if storage was never available
+    }
+  });
+
   // reflow (column count can change) whenever the grid is resized — window
   // resize, orientation change, sidebar toggling, etc.
   const resizeObserver = new ResizeObserver(() => layout(ctx));

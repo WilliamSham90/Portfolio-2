@@ -15,6 +15,17 @@
 
 const STORAGE_KEY = 'os-folders';
 
+// part of the desktop's right-click "Reset" flow (context-menu.js) — the
+// page gets reloaded right after, so this just needs to stop persisting,
+// not re-render anything itself
+document.addEventListener('os:reset', () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // nothing to clean up if storage was never available
+  }
+});
+
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));

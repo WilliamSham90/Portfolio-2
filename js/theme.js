@@ -20,7 +20,7 @@ import paradiseProtocol from '../themes/paradise-protocol.js';
 import krystalCore from '../themes/krystal-core.js';
 
 const THEMES = [dialUpDream, millenniumBrick, fatedDusk, redOctober, paradiseProtocol, krystalCore];
-const DEFAULT_THEME_ID = dialUpDream.id;
+const DEFAULT_THEME_ID = redOctober.id;
 const STORAGE_KEY = 'os-theme';
 
 // theme.colors keys -> the CSS custom property each one drives.
@@ -74,6 +74,16 @@ export function getActiveThemeId() {
 export function initTheme() {
   applyTheme(getActiveThemeId());
   document.addEventListener('os:set-theme', (event) => applyTheme(event.detail.id));
+  // part of the desktop's right-click "Reset" flow (context-menu.js) — the
+  // page gets reloaded right after, so all this needs to do is stop
+  // claiming a saved theme; applyTheme() isn't re-run here on purpose
+  document.addEventListener('os:reset', () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // nothing to clean up if storage was never available
+    }
+  });
 }
 
 function applyTheme(id) {

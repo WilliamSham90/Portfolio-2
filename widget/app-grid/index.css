@@ -74,6 +74,12 @@
     color: var(--text-soft);
     text-align: center;
     letter-spacing: 0.5px;
+    /* icons can sit anywhere on the desktop now (see the "fills the whole
+       desktop" note above), so the label can land over any point of the
+       wallpaper gradient/glow — a fixed text color can't be guaranteed
+       readable against a moving background, but a dark halo behind the
+       text reliably is, for any theme, without hand-tuning colors per theme */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.55), 0 0 6px rgba(0,0,0,0.35);
   }
 
   /* the grid itself stays invisible at all times; this is the only visual

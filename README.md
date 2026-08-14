@@ -22,10 +22,10 @@ Portfolio/
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
-│   ├── dial-up-dream.js       default theme
+│   ├── dial-up-dream.js
 │   ├── millennium-brick.js
 │   ├── fated-dusk.js
-│   ├── red-october.js
+│   ├── red-october.js         default theme
 │   ├── paradise-protocol.js
 │   └── krystal-core.js
 │
@@ -57,7 +57,11 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── file-explorer/           "My Computer" — browses folders + /assets (see "Folders")
+    ├── file-explorer/           "My Computer" — browses folders + /assets (see "Folders")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    └── media-viewer/             opened by file-explorer when an image is clicked (see "Folders")
         ├── index.html
         ├── index.css
         └── index.js
@@ -105,7 +109,7 @@ new is that those values can be swapped as a set at runtime:
   the values, add one import in `js/theme.js`."
 - `js/theme.js` is the only thing that reads them. `initTheme()` runs
   first thing in `js/main.js`'s `boot()`, applies the saved theme
-  (`localStorage`, falls back to Dial-Up Dream) by writing every color
+  (`localStorage`, falls back to Red October) by writing every color
   straight onto `:root` as the *same* custom properties `css/main.css`
   already defines — so every existing widget/app re-skins with zero
   changes. Five of the colors (pearl/rose/hotrose/aqua/lilac — the ones
@@ -135,9 +139,16 @@ Brick and Red October below.)
 | Dial-Up Dream | Quicksand | 400, 700 | `assets/fonts/Quicksand/` |
 | Millennium Brick | Space Mono | 400, 700 | `assets/fonts/SpaceMono/` |
 | Fated Dusk | Cinzel | 400, 700 | `assets/fonts/cinzel/` |
-| Red October | Architects Daughter | 400 only (it has no bold) | `assets/fonts/ArchitectsDaughter/` |
+| Red October *(default)* | Architects Daughter | 400 only (it has no bold) | `assets/fonts/ArchitectsDaughter/` |
 | Paradise Protocol | Space Grotesk | 400, 700 | `assets/fonts/SpaceGrotesk/` |
 | Krystal Core | Orbitron | 400, 700 | `assets/fonts/orbitron/` |
+
+Chromium may log a console warning like `glyf: Glyph bbox was incorrect;
+adjusting` for the Architects Daughter file — that's the browser silently
+correcting bad bounding-box data baked into that particular `.ttf` at
+export time, not something `@font-face`/CSS controls. It's non-fatal (the
+glyph still renders correctly) and safe to ignore; the only real fix is a
+re-exported/re-downloaded copy of the font file itself.
 
 Folder casing matters and is inconsistent on purpose — it's whatever each
 family's download actually used (`cinzel`/`orbitron` lowercase,
@@ -216,25 +227,44 @@ Desktop folders and the File Explorer ("My Computer") work together:
   `assets/manifest.js`); clicking one shows its contents on the right,
   as either a grid (default) or a list — the toggle button, top-right of
   that pane, remembers nothing between openings on purpose, it's a small
-  per-window preference, not worth a `localStorage` key. Clicking a
-  PDF/image/audio/video file opens it in a new tab and lets the browser's
-  own viewer handle it — no custom player yet. **Fonts** just lists the
-  family names (nothing to open — see "Theme fonts").
+  per-window preference, not worth a `localStorage` key. A category entry
+  can also be an **album** (`kind: 'album'` in `assets/manifest.js`,
+  images-only so far but not images-specific) — it shows as a folder row;
+  opening it shows just its own files, same rendering as a category.
+  Clicking a PDF/audio/video file opens it in a new tab and lets the
+  browser's own viewer handle it — no custom player yet. **Images** are
+  the one category with real handling: each row/cell shows the actual
+  picture as its icon (not a generic 🖼️), and clicking one opens
+  `apps/media-viewer/` — a small in-OS lightbox with prev/next through
+  whatever list it was opened from (an album or a category's flat files).
+  It's intentionally simple (no filmstrip/filtering) — a fuller
+  custom-skinned viewer is still a separate, later pass. **Fonts** just
+  lists the family names (nothing to open — see "Theme fonts").
 - Deliberately out of scope for now (all easy to add later, on top of
-  the same pieces above): nested folders and the custom-skinned
-  music/image/video players — those need their own focused design pass
-  rather than being rushed in here.
+  the same pieces above): nested folders (albums are one level, on
+  purpose) and the custom-skinned music/video players — those need their
+  own focused design pass rather than being rushed in here.
 
 ## Right-click menu
 
 `js/context-menu.js` swaps the browser's native right-click menu for the
 OS's own, everywhere on the page. What it shows depends on the target:
 right-clicking a folder icon gets Open/Rename/Delete; anywhere else gets
-the general desktop menu (New Folder / My Computer / Settings — the last
-one just opens the Themes app for now, there's no separate Settings app
-yet). To add a menu item, add one `{icon, label, run}` entry to
-`DESKTOP_ITEMS` (or `folderItems()`) in `js/context-menu.js` — same shape
-as `APPS` in `js/main.js`.
+the general desktop menu (New Folder / My Computer / Settings / Reset
+Desktop — Settings just opens the Themes app for now, there's no separate
+Settings app yet). To add a menu item, add one `{icon, label, run}` entry
+to `DESKTOP_ITEMS` (or `folderItems()`) in `js/context-menu.js` — same
+shape as `APPS` in `js/main.js`.
+
+**Reset Desktop** asks for confirmation, then wipes every piece of user
+customization — theme, folders, icon positions — back to first-boot
+defaults and reloads the page. Each piece of state stays owned by its own
+module (`js/theme.js`, `js/folders.js`, `widget/app-grid`); Reset doesn't
+reach into any of them directly, it just dispatches `os:reset` on
+`document` and each one clears its own `localStorage` key in response —
+same loose-coupling pattern as everything else here, and it means a
+future module with its own persisted state only has to add its own
+listener, no changes needed anywhere else.
 
 **Shift+right-click still opens the real browser menu** — the handler
 checks `event.shiftKey` and simply doesn't call `preventDefault()` when
@@ -303,6 +333,12 @@ command line) is the standard way — but it's optional, not required.
   slot instead of disturbing anyone's arrangement.
 - A `ResizeObserver` recomputes the column count on resize (or mobile
   orientation change) and re-lays out every icon accordingly.
+- Icon labels get a fixed dark `text-shadow` (in `widget/app-grid/index.css`)
+  rather than relying on each theme's text color alone for contrast — since
+  icons can sit anywhere on the desktop now, a label can land over any
+  point of the wallpaper gradient/glow, light or dark, and a shadow halo
+  stays readable regardless of what's behind it in a way a single fixed
+  text color can't promise for every theme (current or future).
 
 ## Windows: dragging, minimize/maximize + taskbar tabs
 

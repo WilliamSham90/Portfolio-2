@@ -67,7 +67,12 @@ async function boot() {
 
 let openCount = 0;
 
-async function openApp(app, appInitArgs = []) {
+/**
+ * Opens an app window. Exported so other modules can launch one that
+ * isn't necessarily in APPS/on the desktop — e.g. apps/file-explorer
+ * opening apps/media-viewer when an image is clicked.
+ */
+export async function openApp(app, appInitArgs = []) {
   const popupLayer = document.getElementById('popup-layer');
 
   // each open app gets its own popup instance, offset slightly so

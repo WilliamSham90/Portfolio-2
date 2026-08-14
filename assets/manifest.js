@@ -9,10 +9,28 @@
    To add a file: drop it in the matching assets/<category>/ folder,
    then add one line below. `file` is the filename inside that folder
    (subfolders are fine, e.g. 'trip/beach.jpg').
+
+   An entry can also be an *album* — `kind: 'album'` plus its own `items`
+   list (same {id, name, file} shape, `file` still relative to the
+   category folder) — the File Explorer shows it as a folder; opening it
+   shows just those items. Only `images` uses this so far, but any
+   category can.
    ===================================================================== */
 
 export default {
   images: [
+    {
+      id: 'one-shot',
+      name: 'One Shot',
+      kind: 'album',
+      items: [
+        { id: 'cafe', name: 'Cafe.webp', file: 'One Shot/Cafe.webp' },
+        { id: 'from-niko', name: 'From Niko.webp', file: 'One Shot/From Niko.webp' },
+        { id: 'maize', name: 'Maize.webp', file: 'One Shot/Maize.webp' },
+        { id: 'niko-and-robot', name: 'Niko and robot.webp', file: 'One Shot/Niko and robot.webp' },
+        { id: 'niko-stars', name: 'Niko stars.webp', file: 'One Shot/Niko stars.webp' },
+      ],
+    },
     // { id: 'sunset', name: 'sunset.jpg', file: 'sunset.jpg' },
   ],
   music: [

@@ -1,4 +1,4 @@
-import { APPS } from '../../js/main.js';
+import { APPS, openApp } from '../../js/main.js';
 import { listFolders, getFolder, removeAppFromFolder } from '../../js/folders.js';
 import manifest from '../../assets/manifest.js';
 
@@ -27,7 +27,7 @@ export function init(container, folderId) {
   const listEl = container.querySelector('.explorer-list');
   const viewToggleEl = container.querySelector('.explorer-view-toggle');
 
-  // { type: 'folder', id } | { type: 'category', key } | null (nothing selected yet)
+  // { type: 'folder', id } | { type: 'category', key } | { type: 'album', catKey, albumId } | null
   let selected = folderId ? { type: 'folder', id: folderId } : null;
   let viewMode = 'grid'; // default, per-window (not persisted between opens)
 
@@ -37,7 +37,11 @@ export function init(container, folderId) {
   }
 
   function isSelected(type, key) {
-    return selected?.type === type && (type === 'folder' ? selected.id === key : selected.key === key);
+    if (type === 'folder') return selected?.type === 'folder' && selected.id === key;
+    // an open album still highlights its parent category in the sidebar,
+    // so it's clear which library section you're browsing
+    return (selected?.type === 'category' && selected.key === key)
+      || (selected?.type === 'album' && selected.catKey === key);
   }
 
   viewToggleEl.addEventListener('click', () => {
@@ -95,11 +99,21 @@ export function init(container, folderId) {
       const folder = getFolder(selected.id);
       titleEl.textContent = folder.name;
       renderFolder(folder);
-    } else {
-      const cat = CATEGORIES.find((c) => c.key === selected.key);
-      titleEl.textContent = cat.name;
-      renderCategory(cat);
+      return;
     }
+
+    if (selected.type === 'album') {
+      const cat = CATEGORIES.find((c) => c.key === selected.catKey);
+      const album = (manifest[selected.catKey] ?? []).find((e) => e.id === selected.albumId);
+      if (!cat || !album) { selected = { type: 'category', key: selected.catKey }; renderMain(); return; }
+      titleEl.textContent = album.name;
+      renderFiles(cat, album.items);
+      return;
+    }
+
+    const cat = CATEGORIES.find((c) => c.key === selected.key);
+    titleEl.textContent = cat.name;
+    renderCategory(cat);
   }
 
   function renderFolder(folder) {
@@ -123,20 +137,52 @@ export function init(container, folderId) {
   }
 
   function renderCategory(cat) {
-    const files = manifest[cat.key] ?? [];
-    if (files.length === 0) {
+    const entries = manifest[cat.key] ?? [];
+    if (entries.length === 0) {
       listEl.appendChild(emptyHint('Nothing here yet.'));
       return;
     }
+
+    const albums = entries.filter((e) => e.kind === 'album');
+    const files = entries.filter((e) => e.kind !== 'album');
+
+    for (const album of albums) {
+      const entry = makeEntry(viewMode, { icon: '📁', name: album.name });
+      entry.mainEl.addEventListener('click', () => select({ type: 'album', catKey: cat.key, albumId: album.id }));
+      listEl.appendChild(entry.el);
+    }
+    renderFiles(cat, files);
+  }
+
+  /** The actual openable files in a category or album — same rendering either way. */
+  function renderFiles(cat, files) {
+    if (files.length === 0) return;
+
     // fonts are just a family list (no single file to open) — everything
-    // else opens in a new tab and lets the browser's native viewer handle it
+    // else opens in a new tab and lets the browser's native viewer handle
+    // it, except images, which open in the in-OS media viewer instead
     const openable = cat.key !== 'fonts';
+    const isImages = cat.key === 'images';
+    const urlFor = (file) => new URL(`../../assets/${cat.key}/${file.file}`, import.meta.url).href;
+
     for (const file of files) {
-      const entry = makeEntry(viewMode, { icon: cat.icon, name: file.name, kind: openable ? 'default' : 'static' });
+      const entry = makeEntry(viewMode, {
+        icon: cat.icon,
+        name: file.name,
+        kind: openable ? 'default' : 'static',
+        thumbnailUrl: isImages ? urlFor(file) : null,
+      });
       if (openable) {
         entry.mainEl.addEventListener('click', () => {
-          const url = new URL(`../../assets/${cat.key}/${file.file}`, import.meta.url);
-          window.open(url, '_blank');
+          if (isImages) {
+            const images = files.map((f) => ({ name: f.name, url: urlFor(f) }));
+            openApp(
+              { id: 'media-viewer', name: file.name, icon: '🖼️', path: './apps/media-viewer/' },
+              [{ images, index: files.indexOf(file) }],
+            );
+          } else {
+            window.open(urlFor(file), '_blank');
+          }
         });
       }
       listEl.appendChild(entry.el);
@@ -176,17 +222,21 @@ function makeEntry(viewMode, options) {
 /**
  * One row in the right-hand *list* view. `kind: 'static'` renders a plain,
  * non-interactive row (no button semantics) for entries that don't do
- * anything yet (fonts).
+ * anything yet (fonts). `thumbnailUrl`, when given (images), shows the
+ * actual picture instead of the category's generic icon.
  */
-function row({ icon, name, kind = 'default', removable = false }) {
+function row({ icon, name, kind = 'default', removable = false, thumbnailUrl = null }) {
   const el = document.createElement('div');
   el.className = 'explorer-row';
 
   const mainEl = document.createElement(kind === 'static' ? 'div' : 'button');
   if (mainEl.tagName === 'BUTTON') mainEl.type = 'button';
   mainEl.className = 'explorer-row-main';
+  const iconHtml = thumbnailUrl
+    ? `<img class="explorer-row-icon explorer-row-thumb" src="${thumbnailUrl}" alt="">`
+    : `<span class="explorer-row-icon">${icon}</span>`;
   mainEl.innerHTML = `
-    <span class="explorer-row-icon">${icon}</span>
+    ${iconHtml}
     <span class="explorer-row-name">${name}</span>
   `;
   el.appendChild(mainEl);
@@ -205,15 +255,18 @@ function row({ icon, name, kind = 'default', removable = false }) {
 }
 
 /** Same shape as row(), for the right-hand *grid* view. */
-function cell({ icon, name, kind = 'default', removable = false }) {
+function cell({ icon, name, kind = 'default', removable = false, thumbnailUrl = null }) {
   const el = document.createElement('div');
   el.className = 'explorer-cell-wrap';
 
   const mainEl = document.createElement(kind === 'static' ? 'div' : 'button');
   if (mainEl.tagName === 'BUTTON') mainEl.type = 'button';
   mainEl.className = 'explorer-cell';
+  const iconHtml = thumbnailUrl
+    ? `<img class="explorer-cell-icon explorer-cell-thumb" src="${thumbnailUrl}" alt="">`
+    : `<span class="explorer-cell-icon">${icon}</span>`;
   mainEl.innerHTML = `
-    <span class="explorer-cell-icon">${icon}</span>
+    ${iconHtml}
     <span class="explorer-cell-name">${name}</span>
   `;
   el.appendChild(mainEl);

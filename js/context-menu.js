@@ -36,6 +36,26 @@ async function deleteFolderPrompt(id) {
   if (await confirmDialog(message)) deleteFolder(id);
 }
 
+/**
+ * Wipes every bit of user customization back to first-boot defaults —
+ * theme, folders, icon positions. Each piece of state is owned by its own
+ * module (js/theme.js, js/folders.js, widget/app-grid), so this doesn't
+ * reach into any of them directly; it just asks everyone to clean up via
+ * os:reset (same loose-coupling pattern as every other cross-module
+ * signal in this OS), then reloads so the whole page boots fresh off
+ * whatever's left in storage — simpler and more reliable than trying to
+ * reset a dozen already-mounted widgets in place.
+ */
+async function resetDesktopPrompt() {
+  const ok = await confirmDialog(
+    'Reset the desktop to its default state? This clears your theme, folders, and icon layout. This can’t be undone.',
+    { confirmLabel: 'Reset' },
+  );
+  if (!ok) return;
+  document.dispatchEvent(new CustomEvent('os:reset'));
+  location.reload();
+}
+
 const DESKTOP_ITEMS = [
   {
     icon: '📁',
@@ -47,6 +67,7 @@ const DESKTOP_ITEMS = [
   },
   { icon: '🖥️', label: 'My Computer', run: () => launchApp('my-computer') },
   { icon: '🎨', label: 'Settings', run: () => launchApp('themes') },
+  { icon: '🔄', label: 'Reset Desktop', run: () => resetDesktopPrompt() },
 ];
 
 function folderItems(folderId) {

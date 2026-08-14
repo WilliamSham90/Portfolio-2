@@ -35,8 +35,8 @@ export default {
     btnBg3: '#8bc3ca',
     btnText: '#4a4126',
 
-    winBg: '#728582',
-    winTitle: '#bf6a32',
+    winBg: '#dfd8c0',
+    winTitle: '#783d35',
     winText: '#4a4126',
 
     wrapA: '#000000',
