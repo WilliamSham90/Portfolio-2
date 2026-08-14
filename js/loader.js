@@ -26,7 +26,10 @@
    to the site root, and none of it breaks if loader.js itself ever moves.
    ===================================================================== */
 
-const loadedStyles = new Set();
+// base.href -> Promise that resolves once that folder's index.css has
+// actually loaded (not just been requested) — see loadWidget() for why
+// this needs to be awaited, not fire-and-forget.
+const styleReady = new Map();
 
 /**
  * @param {string} basePath   folder path relative to the site root, e.g. "./widget/popup/"
@@ -42,19 +45,34 @@ export async function loadWidget(basePath, mountPoint, options = {}) {
   const { multiple = false, initArgs = [] } = options;
   const base = new URL(basePath, document.baseURI);
 
-  if (!loadedStyles.has(base.href)) {
+  if (!styleReady.has(base.href)) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = new URL('index.css', base).href;
+    styleReady.set(base.href, new Promise((resolve) => {
+      // resolve on error too — a missing/broken stylesheet shouldn't hang
+      // every future load of this folder forever
+      link.addEventListener('load', () => resolve(), { once: true });
+      link.addEventListener('error', () => resolve(), { once: true });
+    }));
     document.head.appendChild(link);
-    loadedStyles.add(base.href);
   }
 
   const htmlUrl = new URL('index.html', base);
-  const html = await fetch(htmlUrl).then((res) => {
-    if (!res.ok) throw new Error(`Could not load ${htmlUrl} (${res.status})`);
-    return res.text();
-  });
+  // fetched in parallel with the stylesheet load rather than after it —
+  // no extra latency, just makes sure BOTH are actually done (not merely
+  // requested) before anything below reads this widget's layout. Without
+  // this, the very first time a folder's CSS loads, a piece of index.js
+  // that measures its own size right in init() (a popup window centering/
+  // clamping itself, say) can run before that CSS has applied, and get a
+  // wrong, unstyled measurement.
+  const [html] = await Promise.all([
+    fetch(htmlUrl).then((res) => {
+      if (!res.ok) throw new Error(`Could not load ${htmlUrl} (${res.status})`);
+      return res.text();
+    }),
+    styleReady.get(base.href),
+  ]);
 
   const root = document.createElement('div');
   root.className = 'widget-instance';

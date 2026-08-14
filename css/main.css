@@ -96,6 +96,19 @@ body {
   overflow: hidden; /* an OS desktop doesn't scroll */
 }
 
+/* loader.js wraps every widget/app's markup in this on the way in (see
+   js/loader.js). height:100% looks dangerous to set globally, but it
+   isn't: a percentage height against a parent whose own height is auto
+   (the normal case) just resolves to auto — a no-op. It only ever does
+   anything when that parent (an app's popup-body, say) has been given a
+   real height of its own, e.g. a maximized or manually resized window —
+   exactly the one case where an app that wants to fill the window (like
+   the media viewer) needs a real height to inherit down to. An app that
+   doesn't ask for it (most of them) is completely unaffected either way. */
+.widget-instance {
+  height: 100%;
+}
+
 /* =====================================================================
    OS SHELL — this part lives in index.html itself. Everything else
    (icons, windows, app content) is injected into the empty slots below.

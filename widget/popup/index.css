@@ -5,6 +5,12 @@
     left: 80px;
     min-width: 320px;
     max-width: min(600px, 90vw);
+    /* flex column, not just stacked blocks — this is what lets .popup-body
+       actually fill whatever height the window ends up with (maximized or
+       manually resized) instead of staying content-sized and leaving an
+       empty gap of var(--win-bg) below a short app like the media viewer */
+    display: flex;
+    flex-direction: column;
     background: var(--glass);
     border: 2px solid var(--glass-border);
     border-radius: var(--radius);
@@ -16,8 +22,9 @@
 
   /* maximize fills the desktop area (not the real browser viewport — see
      README.md > "Windows: minimize, maximize, dragging + taskbar tabs")
-     up to the taskbar. Clearing the inline left/top JS sets while dragging
-     is what lets these take effect — see toggleMaximize() in index.js. */
+     up to the taskbar. Clearing the inline left/top/width/height JS sets
+     while dragging/resizing is what lets these take effect — see
+     toggleMaximize() in index.js. */
   :scope.is-maximized {
     top: 0;
     left: 0;
@@ -34,6 +41,7 @@
 
   .popup-titlebar {
     height: 30px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -87,15 +95,42 @@
   }
 
   .popup-body {
+    flex: 1;
+    min-height: 0; /* lets it shrink below content size so its own overflow:auto works inside a flex column */
     background: var(--win-bg);
     color: var(--win-text);
-    max-height: 70vh;
+    max-height: 70vh; /* only matters while the window is auto-sized — index.js
+                          lifts this the moment it's maximized or resized, since
+                          at that point the window's own height should win instead */
     overflow: auto;
   }
 
-  :scope.is-maximized .popup-body {
-    max-height: none;
-    height: calc(100% - 30px); /* fill everything below the 30px titlebar */
+  /* bottom-right drag-to-resize grip — a subtle diagonal-stripe affordance,
+     the classic resize-corner look, quiet until hovered. Hidden while
+     maximized (nothing to resize when it already fills the screen). */
+  .popup-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    touch-action: none;
+    opacity: 0.6;
+    background: linear-gradient(135deg,
+      transparent 0 50%,
+      rgba(255,255,255,0.4) 50% 60%,
+      transparent 60% 70%,
+      rgba(255,255,255,0.4) 70% 80%,
+      transparent 80% 100%);
+    transition: opacity 0.12s ease;
+  }
+  .popup-resize-handle:hover,
+  .popup-resize-handle.is-resizing {
+    opacity: 1;
+  }
+  :scope.is-maximized .popup-resize-handle {
+    display: none;
   }
 }
 

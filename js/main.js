@@ -8,11 +8,17 @@
 import { loadWidget } from './loader.js';
 import { initTheme } from './theme.js';
 import { initContextMenu } from './context-menu.js';
+import { detectBrowser } from './browser-icon.js';
+
+const browser = detectBrowser();
 
 export const APPS = [
   { id: 'hello-world', name: 'Hello There', icon: '👋', path: './apps/hello-world/' },
   { id: 'themes', name: 'Themes', icon: '🎨', path: './apps/themes/' },
   { id: 'my-computer', name: 'My Computer', icon: '🖥️', path: './apps/file-explorer/' },
+  // no `path` — this one isn't a popup app at all, see the os:launch-app
+  // handler below; `external` just gets window.open()'d in a real new tab
+  { id: 'browser', name: browser.name, icon: browser.icon, external: 'https://www.google.com/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -32,7 +38,15 @@ async function boot() {
   // 2. whenever an icon is clicked, the app-grid widget fires this event
   document.addEventListener('os:launch-app', (event) => {
     const app = APPS.find((a) => a.id === event.detail.id);
-    if (app) openApp(app);
+    if (!app) return;
+    if (app.external) {
+      // a real new browser tab/window, not a popup — noopener+noreferrer
+      // since it's leaving the page, standard practice for an
+      // externally-opened link so that page can't reach back via window.opener
+      window.open(app.external, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    openApp(app);
   });
 
   // whenever a folder icon is clicked, open My Computer's app (the File

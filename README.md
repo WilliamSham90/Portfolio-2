@@ -18,7 +18,8 @@ Portfolio/
 │   ├── theme.js                the "theme kernel" — applies a theme's colors/font to :root
 │   ├── folders.js              the "folders kernel" — desktop folders are virtual (see "Folders")
 │   ├── context-menu.js         replaces the right-click menu (see "Right-click menu")
-│   └── confirm-dialog.js        themed window.confirm() replacement, used before deleting a folder
+│   ├── confirm-dialog.js        themed window.confirm() replacement, used before deleting a folder
+│   └── browser-icon.js          picks the Browser app's icon/name (see "Adding a new app later")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -75,7 +76,13 @@ iframes involved:
 
 1. fetches the folder's `index.html` and injects it into a container
 2. links the folder's `index.css` once (even if that folder gets loaded
-   more than once, e.g. two popups)
+   more than once, e.g. two popups) — and actually *waits* for it to
+   finish loading, the first time, before going any further. That matters:
+   without it, the very first time a folder's stylesheet loads, an
+   `init()` that measures its own layout (a popup window centering/
+   clamping itself before its content has arrived, say) can run before
+   that CSS has applied and get a wrong, unstyled measurement — a real
+   bug this surfaced once, not a hypothetical one.
 3. `import()`s the folder's `index.js` as an ES module and calls its
    `init()` with the container
 
@@ -238,8 +245,13 @@ Desktop folders and the File Explorer ("My Computer") work together:
   `apps/media-viewer/` — a small in-OS lightbox with prev/next through
   whatever list it was opened from (an album or a category's flat files).
   It's intentionally simple (no filmstrip/filtering) — a fuller
-  custom-skinned viewer is still a separate, later pass. **Fonts** just
-  lists the family names (nothing to open — see "Theme fonts").
+  custom-skinned viewer is still a separate, later pass. The window title
+  updates as you step through images (it reaches up to its own
+  `.popup-title` via `container.closest('.popup-window')` — there's no
+  generic "app renames its own window" event since nothing else has
+  needed one) so it never goes stale showing whichever image was
+  originally clicked. **Fonts** just lists the family names (nothing to
+  open — see "Theme fonts").
 - Deliberately out of scope for now (all easy to add later, on top of
   the same pieces above): nested folders (albums are one level, on
   purpose) and the custom-skinned music/video players — those need their
@@ -281,6 +293,19 @@ Ctrl+Shift+I) were never intercepted in the first place.
    { id: 'your-app', name: 'Your App', icon: '✨', path: './apps/your-app/' }
    ```
 That's it — no other file needs to change.
+
+An `APPS` entry doesn't have to be a popup app at all — the **Browser**
+icon is `{ id, name, icon, external: 'https://...' }`, no `path`. The
+`os:launch-app` handler in `js/main.js` checks for `external` first and
+just does a real `window.open(url, '_blank', 'noopener,noreferrer')`
+instead of opening a popup — a real Google search tab needs to actually
+be a new tab anyway (Google blocks being framed), so this is simpler
+than pretending it's a windowed app. Its icon/name come from
+`js/browser-icon.js`, which sniffs `navigator.userAgent` at boot and
+picks the closest emoji to whatever browser is actually running it
+(Firefox's fox, Safari's compass, ...) rather than a generic globe for
+everyone — cosmetic only, nothing else depends on the detection being
+exact.
 
 ## Running it
 
@@ -340,13 +365,41 @@ command line) is the standard way — but it's optional, not required.
   stays readable regardless of what's behind it in a way a single fixed
   text color can't promise for every theme (current or future).
 
-## Windows: dragging, minimize/maximize + taskbar tabs
+## Windows: dragging, resizing, minimize/maximize + taskbar tabs
 
 - `widget/popup/index.js` makes each window's titlebar draggable with
   Pointer Events. While dragging it moves via a CSS `transform` (cheap
   for the browser — no layout/paint per pixel), and only "bakes" that
   into real `left`/`top` on release. Dragging is clamped so a window can
-  never end up partially off-screen or hidden behind the taskbar.
+  never end up partially off-screen or hidden behind the taskbar — the
+  opening position is now clamped too (matters most on a short/narrow
+  mobile viewport, where the old flat "80px + offset" could place a
+  window partly off-screen before it was ever touched). That clamp can't
+  just measure the window's real width/height the way the drag/resize
+  clamps do, though: a popup has no width of its own, only min/max-width
+  bounds, and its real size depends on the app's content — which hasn't
+  loaded into `.popup-body` yet at the point a window opens. So it mirrors
+  the CSS `max-width: min(600px, 90vw)` formula in JS instead, to get the
+  window's worst-case size without waiting on that; the real size, once
+  content loads, is always that or smaller, so a window positioned to fit
+  its max-possible size can't end up overflowing once it settles.
+- `.popup-window` is a flex column (titlebar, then `.popup-body` as
+  `flex: 1`) rather than plain stacked blocks — that's what lets the body
+  actually fill whatever height the window ends up with, instead of
+  staying content-sized and leaving a gap of `var(--win-bg)` below a
+  short app when the window is bigger than its content (maximized, or
+  manually resized — this was the "full screen looks weird" bug).
+- **Resizing**: drag the bottom-right corner grip. Same approach as
+  dragging — Pointer Events, `requestAnimationFrame`-batched — except it
+  writes real `width`/`height` every frame instead of a transform,
+  because a transform-scaled window would just be a blurry stretched
+  snapshot; writing the real size makes the browser actually reflow the
+  content at each size, which is what "scales smoothly" needs. Clamped to
+  a sane minimum and to the visible desktop bounds, same rule dragging
+  follows. `apps/media-viewer`'s image (`max-width:100%`,
+  `object-fit:contain`) and `apps/file-explorer`'s grid (`auto-fill`
+  columns) already reflow on their own as the window changes size —
+  resizing didn't need those apps to change at all.
 - Clicking anywhere on a window (or its taskbar tab) raises its z-index
   above every other window and fires a `popup:activated` event.
 - `js/main.js` listens for that event and keeps one `.taskbar-tab` button
@@ -358,8 +411,10 @@ command line) is the standard way — but it's optional, not required.
   purpose: Fullscreen would take over the whole browser window and hide
   the taskbar with it, and the ask here was to stay "in the PC" — the
   taskbar has to stay reachable so you can still switch/restore windows.
-  Dragging is disabled while maximized (nothing to drag when it already
-  fills the screen).
+  Dragging and resizing are both disabled while maximized (nothing to
+  drag/resize when it already fills the screen); restoring puts back
+  whatever position *and* size — including one from a manual resize — the
+  window had before.
 - **Minimize** (titlebar button) just hides the window (`.is-minimized`)
   and dims its taskbar tab. Clicking that tab again restores it; clicking
   the tab of the window that's already active minimizes it instead — the

@@ -1,11 +1,17 @@
 @scope (.media-viewer) {
   :scope {
     position: relative;
+    box-sizing: border-box;
+    height: 100%; /* fills the window when it's maximized/resized (a no-op
+                     otherwise — see the .widget-instance note in css/main.css) */
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center; /* centers the image in any extra space instead
+                                 of leaving it stuck at the top with a gap
+                                 of var(--win-bg) showing below */
     min-width: 320px;
-    padding: 16px 46px 14px;
+    padding: 16px 52px 14px;
     /* a photo needs a neutral, consistently dark backdrop to read well
        against — left un-themed on purpose, unlike everything else in
        this OS, the same way a real photo viewer doesn't reskin itself */
@@ -36,17 +42,20 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
+    /* 40px — comfortably within thumb-tap range on a phone, not just a
+       mouse-cursor-sized target */
+    width: 40px;
+    height: 40px;
     display: grid;
     place-items: center;
     border: none;
     border-radius: 50%;
     background: rgba(255,255,255,0.15);
     color: #fff;
-    font-size: 20px;
+    font-size: 22px;
     line-height: 1;
     cursor: pointer;
+    touch-action: manipulation;
   }
   .media-viewer-nav:hover,
   .media-viewer-nav:focus-visible {

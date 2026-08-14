@@ -15,6 +15,12 @@ export function init(container, payload) {
   const captionEl = container.querySelector('.media-viewer-caption');
   const prevBtn = container.querySelector('.media-viewer-prev');
   const nextBtn = container.querySelector('.media-viewer-next');
+  // the window title is set once, at open, by widget/popup — from
+  // whichever image was actually clicked. Reaching up to it here so it
+  // stays in sync as prev/next moves to a different image; there isn't a
+  // generic "app wants to rename its own window" event for this since
+  // nothing else has needed one yet
+  const titleEl = container.closest('.popup-window')?.querySelector('.popup-title');
 
   prevBtn.hidden = images.length <= 1;
   nextBtn.hidden = images.length <= 1;
@@ -33,6 +39,7 @@ export function init(container, payload) {
     captionEl.textContent = images.length > 1
       ? `${image.name} (${current + 1}/${images.length})`
       : image.name;
+    if (titleEl) titleEl.textContent = image.name;
   }
 
   render();

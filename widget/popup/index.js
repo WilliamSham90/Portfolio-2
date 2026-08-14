@@ -4,6 +4,9 @@ import { loadWidget } from '../../js/loader.js';
 // so "bring to front" just means "give it a higher number than anyone else"
 let zTop = 10;
 
+const MIN_WIDTH = 260;
+const MIN_HEIGHT = 180;
+
 /**
  * Called by loader.js after this widget's HTML is mounted.
  * @param {HTMLElement} container  this popup instance's own root element
@@ -13,8 +16,27 @@ let zTop = 10;
  */
 export async function init(container, app, offset = 0, appInitArgs = []) {
   const win = container.querySelector('.popup-window');
-  win.style.top = `${80 + offset}px`;
-  win.style.left = `${80 + offset}px`;
+  const body = win.querySelector('.popup-body');
+
+  // clamped so the *opening* position is never off-screen either — matters
+  // most on a narrow (mobile) viewport, where a flat "80 + offset" could
+  // otherwise place a window partly past the edge before it's ever been
+  // touched. This can't just measure win.offsetWidth/Height here (the
+  // obvious thing to reach for, and what the drag/resize clamps below
+  // both do) — the window has no width of its own, only min/max-width
+  // bounds, so its real size depends on the app's content, which hasn't
+  // loaded into .popup-body yet at this point. Mirroring the CSS max-width
+  // formula instead gives the window's worst-case (largest possible) size
+  // without needing to wait for that; the real size, once content loads,
+  // is always that or smaller, so clamping against it can't leave a
+  // window that was fine at open time overflowing once content settles.
+  const layerBounds = container.parentElement.getBoundingClientRect();
+  const maxPossibleWidth = Math.min(600, layerBounds.width * 0.9); // matches index.css's max-width: min(600px, 90vw)
+  const maxPossibleHeight = Math.min(layerBounds.height * 0.7 + 30, layerBounds.height); // 70vh body cap + ~30px titlebar
+  const openLeft = Math.max(layerBounds.width - maxPossibleWidth, 0);
+  const openTop = Math.max(layerBounds.height - maxPossibleHeight, 0);
+  win.style.left = `${clamp(80 + offset, 0, openLeft)}px`;
+  win.style.top = `${clamp(80 + offset, 0, openTop)}px`;
 
   win.querySelector('.popup-title').textContent = app.name;
 
@@ -31,11 +53,11 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
 
   const handle = win.querySelector('.popup-titlebar');
   makeDraggable(win, handle);
-  makeMaximizable(win, handle, win.querySelector('.popup-maximize'));
+  makeResizable(win, body, win.querySelector('.popup-resize-handle'));
+  makeMaximizable(win, body, handle, win.querySelector('.popup-maximize'));
   makeMinimizable(win, container, win.querySelector('.popup-minimize'));
 
   // load the actual app (its own html/css/js) into this window's body
-  const body = win.querySelector('.popup-body');
   await loadWidget(app.path, body, { initArgs: appInitArgs });
 }
 
@@ -123,29 +145,112 @@ function makeDraggable(win, handle) {
 }
 
 /**
+ * Drag the bottom-right corner to resize. Once a window's been resized it
+ * has an explicit width/height/max-width from here on (rather than the
+ * CSS min/max-width + content-driven height it starts with) — real
+ * layout reflow on every frame, not a scaled-up snapshot, so content
+ * genuinely re-wraps/rescales as it goes rather than just stretching.
+ */
+function makeResizable(win, body, handle) {
+  let resizing = false;
+  let startX = 0, startY = 0;
+  let startWidth = 0, startHeight = 0;
+  let pendingWidth = 0, pendingHeight = 0;
+  let rafId = null;
+
+  const applyFrame = () => {
+    rafId = null;
+    win.style.width = `${pendingWidth}px`;
+    win.style.height = `${pendingHeight}px`;
+  };
+
+  handle.addEventListener('pointerdown', (event) => {
+    if (win.classList.contains('is-maximized')) return; // nothing to resize when it already fills the screen
+    resizing = true;
+    startX = event.clientX;
+    startY = event.clientY;
+    startWidth = win.offsetWidth;
+    startHeight = win.offsetHeight;
+    // switch from CSS-driven sizing (min/max-width, content-height) to an
+    // explicit size the drag can add pixels to; the 70vh cap on .popup-body
+    // (index.css) only makes sense for a content-driven window, so it's
+    // lifted here too, same as when maximizing
+    win.style.width = `${startWidth}px`;
+    win.style.height = `${startHeight}px`;
+    win.style.maxWidth = 'none';
+    body.style.maxHeight = 'none';
+    handle.classList.add('is-resizing');
+    handle.setPointerCapture(event.pointerId);
+    document.body.style.userSelect = 'none';
+    event.preventDefault(); // don't let this also read as a titlebar drag or text selection
+  });
+
+  handle.addEventListener('pointermove', (event) => {
+    if (!resizing) return;
+    // bounds = the popup's positioned ancestor (#popup-layer) — can't grow
+    // past the visible desktop, same rule dragging already follows
+    const bounds = win.offsetParent.getBoundingClientRect();
+    const maxWidth = Math.max(MIN_WIDTH, bounds.width - win.offsetLeft);
+    const maxHeight = Math.max(MIN_HEIGHT, bounds.height - win.offsetTop);
+    pendingWidth = clamp(startWidth + (event.clientX - startX), MIN_WIDTH, maxWidth);
+    pendingHeight = clamp(startHeight + (event.clientY - startY), MIN_HEIGHT, maxHeight);
+    if (rafId === null) rafId = requestAnimationFrame(applyFrame);
+  });
+
+  const endResize = (event) => {
+    if (!resizing) return;
+    resizing = false;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    handle.classList.remove('is-resizing');
+    try { handle.releasePointerCapture(event.pointerId); } catch { /* already released */ }
+    document.body.style.userSelect = '';
+  };
+
+  handle.addEventListener('pointerup', endResize);
+  handle.addEventListener('pointercancel', endResize);
+}
+
+/**
  * Maximize fills the desktop area (#popup-layer — the space above the
  * taskbar), not the real browser window; that's just a CSS class
  * (.is-maximized, see index.css) rather than the Fullscreen API, which
  * would take over the whole browser and hide the taskbar along with it.
  * Toggled by the titlebar button or a titlebar double-click, same as any
- * normal OS window.
+ * normal OS window. Restores whatever geometry — position, and size if
+ * it's ever been manually resized — the window had right before.
  */
-function makeMaximizable(win, handle, button) {
-  let restoreLeft = null;
-  let restoreTop = null;
+function makeMaximizable(win, body, handle, button) {
+  let restore = null;
 
   const toggle = () => {
     const maximizing = !win.classList.contains('is-maximized');
     if (maximizing) {
-      restoreLeft = win.style.left;
-      restoreTop = win.style.top;
+      restore = {
+        left: win.style.left,
+        top: win.style.top,
+        width: win.style.width,
+        height: win.style.height,
+        maxWidth: win.style.maxWidth,
+        bodyMaxHeight: body.style.maxHeight,
+      };
       win.style.left = '';
       win.style.top = '';
+      win.style.width = '';
+      win.style.height = '';
+      win.style.maxWidth = '';
+      body.style.maxHeight = 'none';
       win.classList.add('is-maximized');
     } else {
       win.classList.remove('is-maximized');
-      win.style.left = restoreLeft;
-      win.style.top = restoreTop;
+      win.style.left = restore.left;
+      win.style.top = restore.top;
+      win.style.width = restore.width;
+      win.style.height = restore.height;
+      win.style.maxWidth = restore.maxWidth;
+      body.style.maxHeight = restore.bodyMaxHeight;
     }
     button.innerHTML = maximizing ? '&#9635;' : '&#9633;';
     button.setAttribute('aria-label', maximizing ? 'Restore' : 'Maximize');
