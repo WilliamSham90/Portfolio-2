@@ -2,11 +2,13 @@
    folders.js
    Desktop folders are virtual — this site is static (no backend), so a
    "folder" can't be a real directory the OS creates on disk. Instead a
-   folder is just {id, name, icon, appIds}: a little box you can file
-   existing apps into. This module is the single source of truth for
-   that list (localStorage-backed, same pattern as theme.js), read by
-   widget/app-grid (to draw folders as desktop icons) and apps/file-explorer
-   (to browse/create/empty them).
+   folder is just {id, name, appIds}: a little box you can file existing
+   apps into. This module is the single source of truth for that list
+   (localStorage-backed, same pattern as theme.js), read by widget/app-grid
+   (to draw folders as desktop icons) and apps/file-explorer (to
+   browse/create/empty them). What icon a folder actually gets drawn with
+   is a separate concern — see js/icon-style.js — since it depends on the
+   user's chosen icon style, not on anything stored per-folder here.
 
    Any change here dispatches os:folders-changed on document, so every
    open window that cares (the desktop, any File Explorer window) can
@@ -44,7 +46,7 @@ function save(folders) {
   document.dispatchEvent(new CustomEvent('os:folders-changed'));
 }
 
-/** Every folder, as {id, name, icon, appIds}. */
+/** Every folder, as {id, name, appIds}. */
 export function listFolders() {
   return load();
 }
@@ -63,7 +65,6 @@ export function createFolder() {
   const folder = {
     id: `folder-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     name,
-    icon: '📁',
     appIds: [],
   };
   folders.push(folder);

@@ -68,6 +68,11 @@
     line-height: 1;
     filter: drop-shadow(0 0 10px rgba(var(--hotrose-rgb),0.35));
   }
+  .app-icon-glyph-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
 
   .app-icon-label {
     font: var(--fs-xs) var(--font-mono);

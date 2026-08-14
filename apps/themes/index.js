@@ -1,10 +1,16 @@
 import { listThemes, getActiveThemeId } from '../../js/theme.js';
+import { listIconStyles, getIconStyle, setIconStyle } from '../../js/icon-style.js';
 
 /**
  * Called by loader.js after this app's HTML is mounted.
  * @param {HTMLElement} container  this app instance's own root element
  */
 export function init(container) {
+  initThemeSection(container);
+  initIconStyleSection(container);
+}
+
+function initThemeSection(container) {
   const list = container.querySelector('.theme-list');
   const themes = listThemes();
   let activeId = getActiveThemeId();
@@ -40,6 +46,36 @@ export function init(container) {
     card.addEventListener('click', () => {
       document.dispatchEvent(new CustomEvent('os:set-theme', { detail: { id: theme.id } }));
     });
+    return card;
+  }
+
+  render();
+}
+
+function initIconStyleSection(container) {
+  const list = container.querySelector('.icon-style-list');
+  const styles = listIconStyles();
+  let activeId = getIconStyle();
+
+  document.addEventListener('os:icon-style-changed', (event) => {
+    activeId = event.detail.id;
+    render();
+  });
+
+  function render() {
+    list.replaceChildren(...styles.map((style) => buildCard(style, style.id === activeId)));
+  }
+
+  function buildCard(style, isActive) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'icon-style-card' + (isActive ? ' is-active' : '');
+    card.setAttribute('aria-pressed', String(isActive));
+    card.innerHTML = `
+      <img class="icon-style-preview" src="${style.folderIcon}" alt="" draggable="false" />
+      <span class="icon-style-name">${style.name}${isActive ? ' · active' : ''}</span>
+    `;
+    card.addEventListener('click', () => setIconStyle(style.id));
     return card;
   }
 

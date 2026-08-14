@@ -19,7 +19,10 @@ Portfolio/
 │   ├── folders.js              the "folders kernel" — desktop folders are virtual (see "Folders")
 │   ├── context-menu.js         replaces the right-click menu (see "Right-click menu")
 │   ├── confirm-dialog.js        themed window.confirm() replacement, used before deleting a folder
-│   └── browser-icon.js          picks the Browser app's icon/name (see "Adding a new app later")
+│   ├── icon.js                  isImageIcon() — one shared image-vs-emoji icon check (see "Icons")
+│   ├── icon-style.js             the "icon style kernel" — blue/yellow folder icons (see "Icons")
+│   ├── start-menu.js             the taskbar's Start button + its dropdown (see "Start menu")
+│   └── power.js                  the shut-down/boot-up overlay (see "Start menu")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -37,7 +40,11 @@ Portfolio/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
 │   ├── pdf/
 │   ├── videos/
-│   └── system/                OS-chrome media, deliberately NOT shown in the Explorer
+│   └── system/
+│       └── Icons/              OS-chrome icons, deliberately NOT shown in the Explorer (see "Icons")
+│           ├── basic/            app-icon placeholders, the start button, power buttons, file types
+│           ├── blue folders/     one of the two selectable folder-icon packs
+│           └── yellow folders/   the other — default (see "Icons")
 │
 ├── widget/
 │   ├── app-grid/             icon grid widget — sits on top of the desktop
@@ -54,7 +61,8 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    ├── themes/                 lets the user pick a theme (see "Theming")
+    ├── themes/                 folder name unchanged, but this is now "Settings" —
+    │   │                        theme + icon style (see "Theming" and "Icons")
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
@@ -109,7 +117,11 @@ naming for this.
 
 ## Theming
 
-Every color/font a widget or app uses is a CSS custom property declared in
+This is the "Theme" half of the **Settings** app (`apps/themes/` — the
+folder wasn't renamed, only the app's `name`/`id` in `APPS`, since it's
+still fundamentally the same theme-picking code, just with an "Icon
+Style" section added alongside it now — see "Icons"). Every color/font a
+widget or app uses is a CSS custom property declared in
 `css/main.css` (`--rose`, `--font-main`, etc.) — nothing new there. What's
 new is that those values can be swapped as a set at runtime:
 
@@ -173,6 +185,38 @@ To add a 7th theme's font (or swap one of these): drop the `.ttf` (or
 rules to `themes/fonts.css`, and point that theme's `fonts.display.family`
 (in its file under `/themes`) at the family name you used.
 
+## Icons
+
+Every icon in this OS is either a plain emoji glyph or a path to a real
+image under `assets/system/Icons/` — `js/icon.js`'s one-line
+`isImageIcon()` is how every place that draws an icon (`widget/app-grid`,
+the taskbar, `js/context-menu.js`, `apps/file-explorer`, `js/start-menu.js`)
+tells which it's looking at and renders an `<img>` instead of a `<span>`
+accordingly, rather than each of them needing their own check or an extra
+flag threaded through the data.
+
+- **App icons** are all `assets/system/Icons/basic/add.png` for now — a
+  shared placeholder, not a mistake — until real per-app icons are ready
+  to swap in (in `APPS`, in `js/main.js`). **Browser**'s is fixed to
+  `earth.png` instead of the old per-browser-detected icon.
+- **Folder icons** are the one style-*switchable* icon — `js/icon-style.js`
+  (same shared-kernel shape as `js/theme.js`) owns whether `assets/system/Icons/blue folders/`
+  or `yellow folders/` is active (default **yellow**), persists it, and
+  fires `os:icon-style-changed` for `widget/app-grid` and
+  `apps/file-explorer` to redraw every folder icon on. Only the plain
+  "folder" icon is actually wired up to draw anything right now, but
+  `icon-style.js`'s `PAIRS` table maps every *other* icon in both packs to
+  its counterpart in the other one too, so wiring up a new one later (a
+  locked folder, say) is one `styledIconUrl('lockedFolder')` call, not a
+  new lookup table. The packs aren't quite symmetric — blue's
+  `favourite-folder.png` (a star) and yellow's `smiley.png` don't look
+  alike but are paired as the same "type" of icon anyway (called out in
+  the file); `calendar.png` (blue) and `notes.png` (yellow) have no
+  counterpart in the other pack at all, so they're left out of `PAIRS`
+  entirely.
+- Picked from the **Icon Style** section of the Settings app (same
+  active-indicator-card pattern as the theme picker just above it).
+
 ## Assets
 
 `assets/` is shared media any widget or app can use — `images/`, `music/`,
@@ -196,12 +240,15 @@ OS's own chrome, not user-browsable media.
 
 Desktop folders and the File Explorer ("My Computer") work together:
 
-- A folder is virtual — `{id, name, icon, appIds}` — since this is a
-  static site with no backend to create a real one on disk. `js/folders.js`
+- A folder is virtual — `{id, name, appIds}` — since this is a static
+  site with no backend to create a real one on disk. `js/folders.js`
   (same shared-kernel pattern as `js/theme.js`) is the only thing that
   reads/writes them, via `localStorage`. Any change fires
   `os:folders-changed` on `document`, so the desktop and every open File
-  Explorer window can re-render themselves.
+  Explorer window can re-render themselves. What icon a folder is drawn
+  with isn't stored on the folder at all — it comes from `js/icon-style.js`
+  (see "Icons" above), so switching icon style re-skins every folder at
+  once instead of needing to touch this data.
 - Folders live as regular icons on the desktop grid, right alongside
   apps — `widget/app-grid` asks `js/folders.js` for the current list and
   draws them with the exact same draggable/swappable icon it already
@@ -234,8 +281,10 @@ Desktop folders and the File Explorer ("My Computer") work together:
 - **My Computer** is a completely ordinary app (`apps/file-explorer/`, in
   `APPS` like any other) — draggable, filable into a folder, etc. It's a
   two-pane window: a left sidebar lists your folders and the read-only
-  `assets/` library (Images/Music/Videos/PDF/Fonts, from
-  `assets/manifest.js`); clicking one shows its contents on the right,
+  `assets/` library (Images/Music/Videos/PDF, from `assets/manifest.js` —
+  Fonts is deliberately left out of this list; see "Theme fonts", the
+  underlying font files and theme mechanism are untouched, they're just
+  not something to browse here); clicking one shows its contents on the right,
   as either a grid (default) or a list — the toggle button, top-right of
   that pane, remembers nothing between openings on purpose, it's a small
   per-window preference, not worth a `localStorage` key. A category entry
@@ -254,8 +303,7 @@ Desktop folders and the File Explorer ("My Computer") work together:
   `.popup-title` via `container.closest('.popup-window')` — there's no
   generic "app renames its own window" event since nothing else has
   needed one) so it never goes stale showing whichever image was
-  originally clicked. **Fonts** just lists the family names (nothing to
-  open — see "Theme fonts").
+  originally clicked.
 - Deliberately out of scope for now (all easy to add later, on top of
   the same pieces above): nested folders (albums are one level, on
   purpose) and the custom-skinned music/video players — those need their
@@ -267,10 +315,13 @@ Desktop folders and the File Explorer ("My Computer") work together:
 OS's own, everywhere on the page. What it shows depends on the target:
 right-clicking a folder icon gets Open/Rename/Delete; anywhere else gets
 the general desktop menu (New Folder / My Computer / Settings / Reset
-Desktop — Settings just opens the Themes app for now, there's no separate
-Settings app yet). To add a menu item, add one `{icon, label, run}` entry
-to `DESKTOP_ITEMS` (or `folderItems()`) in `js/context-menu.js` — same
-shape as `APPS` in `js/main.js`.
+Desktop — Settings launches the Settings app, `apps/themes/`). New
+Folder's own icon comes from `js/icon-style.js` too, read fresh each time
+the menu opens (`desktopItems()` is a function, not a static array, for
+exactly that reason) so it's never stale after switching icon style. To
+add a menu item, add one `{icon, label, run}` entry to `desktopItems()`
+(or `folderItems()`) in `js/context-menu.js` — same shape as `APPS` in
+`js/main.js`.
 
 **Reset Desktop** asks for confirmation, then wipes every piece of user
 customization — theme, folders, icon positions — back to first-boot
@@ -287,6 +338,31 @@ checks `event.shiftKey` and simply doesn't call `preventDefault()` when
 it's held, so the native menu (Inspect, etc.) opens exactly as normal.
 That's the only thing touched; keyboard devtools shortcuts (F12,
 Ctrl+Shift+I) were never intercepted in the first place.
+
+## Start menu
+
+`js/start-menu.js` is the taskbar's left-side Start button (`app-store.png`)
+and its dropdown. It's initialized as `initStartMenu(APPS)` from
+`js/main.js`'s `boot()` — receiving the app list as a parameter rather than
+importing `APPS` back from `main.js` itself, since `main.js` already
+imports `start-menu.js`; importing it the other way round would be a
+circular import, and depending on evaluation order could hit `APPS` before
+its `const` is initialized. The dropdown lists every app (same icon-or-emoji
+rendering as everywhere else, via `js/icon.js`) — clicking one fires
+`os:launch-app`, same event a desktop icon click fires — plus a Power off
+button at the bottom. It closes on outside-click, Escape, or launching an app.
+
+**Power off** (`js/power.js`) asks for confirmation first
+(`js/confirm-dialog.js`, same as deleting a folder), then shows
+`#power-overlay` — a fixed, full-viewport black div (`z-index: 1300`, above
+everything else including the confirm dialog) that fades in over its own
+opacity transition rather than appearing instantly. On it, a single pulsing
+green power button (`power-button green.png`). Clicking that button plays a
+small boot sequence: a fixed list of BIOS-style lines typed out character by
+character into a `<pre>` (monospace, green-on-black, with a blinking-cursor
+`::after`), then the overlay fades back out to reveal the desktop —
+exactly as it was, since nothing was actually torn down, the whole thing is
+just an overlay sitting on top.
 
 ## Adding a new app later
 

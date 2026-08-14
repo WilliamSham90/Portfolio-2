@@ -27,6 +27,10 @@
     </div>
 
     <nav id="taskbar">
+      <!-- start-menu.js -->
+      <button type="button" id="start-button" aria-label="Start menu" aria-haspopup="true">
+        <img src="./assets/system/Icons/basic/app-store.png" alt="" draggable="false">
+      </button>
       <div id="taskbar-brand">my-os</div>
       <!-- main.js appends one .taskbar-tab button per open app here -->
       <div id="taskbar-tabs"></div>
@@ -50,6 +54,25 @@
         <button type="button" class="confirm-dialog-confirm"></button>
       </div>
     </div>
+  </div>
+
+  <!-- start-menu.js's dropdown -->
+  <div id="start-menu" class="start-menu" hidden role="menu">
+    <div class="start-menu-apps"></div>
+    <div class="start-menu-footer">
+      <button type="button" class="start-menu-power">
+        <img src="./assets/system/Icons/basic/power-button.png" alt="" draggable="false">
+        <span>Power off</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- power.js's shut-down/boot-up overlay -->
+  <div id="power-overlay" class="power-overlay" hidden>
+    <button type="button" class="power-on-button" aria-label="Power on" hidden>
+      <img src="./assets/system/Icons/basic/power-button green.png" alt="" draggable="false">
+    </button>
+    <pre class="power-boot-log" hidden></pre>
   </div>
 
   <script type="module" src="./js/main.js"></script>

@@ -8,15 +8,20 @@
 import { loadWidget } from './loader.js';
 import { initTheme } from './theme.js';
 import { initContextMenu } from './context-menu.js';
-import { detectBrowser } from './browser-icon.js';
+import { initStartMenu } from './start-menu.js';
+import { initPower } from './power.js';
+import { isImageIcon } from './icon.js';
 
-const browser = detectBrowser();
+// placeholder icon for every app until real ones are ready — see
+// README.md > "Adding a new app later"
+const APP_ICON = new URL('../assets/system/Icons/basic/add.png', import.meta.url).href;
+const BROWSER_ICON = new URL('../assets/system/Icons/basic/earth.png', import.meta.url).href;
 
 export const APPS = [
-  { id: 'hello-world', name: 'Hello There', icon: '👋', path: './apps/hello-world/' },
-  { id: 'themes', name: 'Themes', icon: '🎨', path: './apps/themes/' },
-  { id: 'my-computer', name: 'My Computer', icon: '🖥️', path: './apps/file-explorer/' },
-  { id: 'browser', name: browser.name, icon: browser.icon, path: './apps/browser/' },
+  { id: 'hello-world', name: 'Hello There', icon: APP_ICON, path: './apps/hello-world/' },
+  { id: 'settings', name: 'Settings', icon: APP_ICON, path: './apps/themes/' },
+  { id: 'my-computer', name: 'My Computer', icon: APP_ICON, path: './apps/file-explorer/' },
+  { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -28,6 +33,8 @@ async function boot() {
   //    so widgets never render with the wrong colors for a frame
   initTheme();
   initContextMenu();
+  initPower();
+  initStartMenu(APPS);
 
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');
@@ -106,7 +113,10 @@ function createTaskbarTab(app, popupRoot) {
   const tab = document.createElement('button');
   tab.type = 'button';
   tab.className = 'taskbar-tab';
-  tab.innerHTML = `<span class="taskbar-tab-icon">${app.icon}</span><span class="taskbar-tab-label">${app.name}</span>`;
+  const iconHtml = isImageIcon(app.icon)
+    ? `<img class="taskbar-tab-icon taskbar-tab-icon-img icon-glow" src="${app.icon}" alt="" draggable="false">`
+    : `<span class="taskbar-tab-icon">${app.icon}</span>`;
+  tab.innerHTML = `${iconHtml}<span class="taskbar-tab-label">${app.name}</span>`;
 
   // clicking the tab for a minimized (or already-active) window toggles it
   // minimized/restored; otherwise it just brings that window to front

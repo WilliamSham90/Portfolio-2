@@ -15,6 +15,8 @@
 
 import { createFolder, getFolder, deleteFolder } from './folders.js';
 import { confirmDialog } from './confirm-dialog.js';
+import { styledIconUrl } from './icon-style.js';
+import { isImageIcon } from './icon.js';
 
 function launchApp(id) {
   document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id } }));
@@ -56,19 +58,24 @@ async function resetDesktopPrompt() {
   location.reload();
 }
 
-const DESKTOP_ITEMS = [
-  {
-    icon: '📁',
-    label: 'New Folder',
-    run: () => {
-      const folder = createFolder();
-      renameFolderPrompt(folder.id); // straight into rename, like a normal OS
+// a function, not a static array — icon: styledIconUrl('folder') has to be
+// read fresh each time the menu opens, so it picks up an icon-style change
+// made after the page loaded instead of showing whatever it resolved to first
+function desktopItems() {
+  return [
+    {
+      icon: styledIconUrl('folder'),
+      label: 'New Folder',
+      run: () => {
+        const folder = createFolder();
+        renameFolderPrompt(folder.id); // straight into rename, like a normal OS
+      },
     },
-  },
-  { icon: '🖥️', label: 'My Computer', run: () => launchApp('my-computer') },
-  { icon: '🎨', label: 'Settings', run: () => launchApp('themes') },
-  { icon: '🔄', label: 'Reset Desktop', run: () => resetDesktopPrompt() },
-];
+    { icon: '🖥️', label: 'My Computer', run: () => launchApp('my-computer') },
+    { icon: '⚙️', label: 'Settings', run: () => launchApp('settings') },
+    { icon: '🔄', label: 'Reset Desktop', run: () => resetDesktopPrompt() },
+  ];
+}
 
 function folderItems(folderId) {
   return [
@@ -86,7 +93,7 @@ export function initContextMenu() {
     event.preventDefault();
 
     const folderEl = event.target.closest('.app-icon[data-item-kind="folder"]');
-    const items = folderEl ? folderItems(folderEl.dataset.itemId) : DESKTOP_ITEMS;
+    const items = folderEl ? folderItems(folderEl.dataset.itemId) : desktopItems();
     show(event.clientX, event.clientY, items);
   });
 
@@ -106,7 +113,10 @@ export function initContextMenu() {
       li.className = 'context-menu-item';
       li.setAttribute('role', 'menuitem');
       li.tabIndex = -1;
-      li.innerHTML = `<span class="context-menu-icon">${item.icon}</span><span>${item.label}</span>`;
+      const iconHtml = isImageIcon(item.icon)
+        ? `<img class="context-menu-icon context-menu-icon-img" src="${item.icon}" alt="" draggable="false">`
+        : `<span class="context-menu-icon">${item.icon}</span>`;
+      li.innerHTML = `${iconHtml}<span>${item.label}</span>`;
       li.addEventListener('click', () => {
         item.run();
         hide();

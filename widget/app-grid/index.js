@@ -1,4 +1,6 @@
 import { listFolders, fileAppIntoFolder, renameFolder } from '../../js/folders.js';
+import { styledIconUrl } from '../../js/icon-style.js';
+import { isImageIcon } from '../../js/icon.js';
 
 const STORAGE_KEY = 'os-app-grid-slots-v1';
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag, not a tap
@@ -27,6 +29,10 @@ export function init(container, apps) {
   // a folder being created/filed/emptied (from this window or a File
   // Explorer window) means the desktop's own icon set has changed
   document.addEventListener('os:folders-changed', () => render(ctx));
+
+  // every folder icon changes at once when the Settings app's icon style
+  // (blue/yellow) does
+  document.addEventListener('os:icon-style-changed', () => render(ctx));
 
   // the context menu (or a fresh "New Folder") asks for a folder's icon
   // to enter its inline rename state
@@ -60,7 +66,8 @@ function visibleItems(ctx) {
   const appItems = ctx.apps
     .filter((app) => !filedAppIds.has(app.id))
     .map((app) => ({ kind: 'app', id: app.id, name: app.name, icon: app.icon }));
-  const folderItems = folders.map((f) => ({ kind: 'folder', id: f.id, name: f.name, icon: f.icon }));
+  const folderIcon = styledIconUrl('folder');
+  const folderItems = folders.map((f) => ({ kind: 'folder', id: f.id, name: f.name, icon: folderIcon }));
   return [...appItems, ...folderItems];
 }
 
@@ -85,8 +92,11 @@ function render(ctx) {
     btn.setAttribute('aria-label', item.kind === 'folder' ? `Open folder ${item.name}` : `Open ${item.name}`);
     btn.dataset.itemKind = item.kind;
     btn.dataset.itemId = item.id;
+    const glyphHtml = isImageIcon(item.icon)
+      ? `<img class="app-icon-glyph app-icon-glyph-img icon-glow" src="${item.icon}" alt="" draggable="false">`
+      : `<span class="app-icon-glyph">${item.icon}</span>`;
     btn.innerHTML = `
-      <span class="app-icon-glyph">${item.icon}</span>
+      ${glyphHtml}
       <span class="app-icon-label">${item.name}</span>
     `;
     ctx.grid.appendChild(btn);

@@ -109,6 +109,14 @@ body {
   height: 100%;
 }
 
+/* shared by every real-image icon (app-grid, taskbar, the right-click
+   menu, the Explorer, the start menu) so they all get the same glow
+   treatment an emoji icon's drop-shadow already gives it, instead of
+   each place repeating this rgba(var(--hotrose-rgb),...) line itself */
+.icon-glow {
+  filter: drop-shadow(0 0 8px rgba(var(--hotrose-rgb),0.35));
+}
+
 /* =====================================================================
    OS SHELL — this part lives in index.html itself. Everything else
    (icons, windows, app content) is injected into the empty slots below.
@@ -165,6 +173,30 @@ body {
   letter-spacing: 1px;
 }
 
+/* start-menu.js's button */
+#start-button {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: var(--glass);
+  cursor: pointer;
+}
+#start-button img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+#start-button:hover,
+#start-button:focus-visible,
+#start-button.is-active {
+  background: rgba(255,255,255,0.25);
+  outline: none;
+}
+
 #taskbar-brand {
   flex-shrink: 0;
   color: var(--text);
@@ -212,6 +244,12 @@ body {
 }
 .taskbar-tab.is-minimized {
   opacity: 0.55;
+}
+.taskbar-tab-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 /* ---------- RIGHT-CLICK MENU (context-menu.js) ---------- */
@@ -328,8 +366,161 @@ body {
   font-size: 15px;
   line-height: 1;
 }
+.context-menu-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
 .taskbar-tab.is-active {
   color: var(--text);
   border-color: var(--pearl);
   background: linear-gradient(90deg, rgba(var(--hotrose-rgb),0.4), rgba(var(--aqua-rgb),0.3));
+}
+
+/* ---------- START MENU (start-menu.js) ---------- */
+.start-menu {
+  position: fixed;
+  z-index: 1000; /* same tier as .context-menu — only one is ever open at once */
+  left: 12px;
+  bottom: calc(var(--taskbar-height) + 8px);
+  width: 260px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+.start-menu[hidden] {
+  display: none;
+}
+
+.start-menu-apps {
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.start-menu-app,
+.start-menu-power {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+}
+.start-menu-app:hover,
+.start-menu-app:focus-visible {
+  background: rgba(255,255,255,0.2);
+  outline: none;
+}
+
+.start-menu-app-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.start-menu-app-icon-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.start-menu-footer {
+  flex-shrink: 0;
+  padding: 8px;
+  border-top: 1px solid var(--glass-border);
+}
+.start-menu-power img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.start-menu-power:hover,
+.start-menu-power:focus-visible {
+  background: rgba(255,80,80,0.28);
+  outline: none;
+}
+
+/* ---------- POWER OFF / BOOT OVERLAY (power.js) ---------- */
+.power-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300; /* above everything, including the confirm dialog (1100) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.power-overlay[hidden] {
+  display: none;
+}
+.power-overlay.is-visible {
+  opacity: 1;
+}
+
+.power-on-button {
+  width: 84px;
+  height: 84px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  animation: power-pulse 2.2s ease-in-out infinite;
+}
+.power-on-button[hidden] {
+  display: none;
+}
+.power-on-button img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+@keyframes power-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(80,255,120,0.5)); transform: scale(1); }
+  50%      { filter: drop-shadow(0 0 18px rgba(80,255,120,0.85)); transform: scale(1.06); }
+}
+
+.power-boot-log {
+  width: min(560px, 86vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4dff6a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.power-boot-log[hidden] {
+  display: none;
+}
+.power-boot-log:not([hidden])::after {
+  content: '█';
+  animation: power-cursor-blink 1s step-end infinite;
+}
+@keyframes power-cursor-blink {
+  50% { opacity: 0; }
 }

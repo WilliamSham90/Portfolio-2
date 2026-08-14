@@ -1,13 +1,16 @@
 import { APPS, openApp } from '../../js/main.js';
 import { listFolders, getFolder, removeAppFromFolder } from '../../js/folders.js';
+import { styledIconUrl } from '../../js/icon-style.js';
+import { isImageIcon } from '../../js/icon.js';
 import manifest from '../../assets/manifest.js';
 
+// no "Fonts" entry — theme fonts live under assets/ but aren't meant to
+// be browsable here, unlike the rest of the media library
 const CATEGORIES = [
   { key: 'images', name: 'Images', icon: '🖼️' },
   { key: 'music', name: 'Music', icon: '🎵' },
   { key: 'videos', name: 'Videos', icon: '🎬' },
   { key: 'pdf', name: 'PDF', icon: '📄' },
-  { key: 'fonts', name: 'Fonts', icon: '🔤' },
 ];
 
 const VIEW_TOGGLE = {
@@ -59,10 +62,11 @@ export function init(container, folderId) {
 
     const folders = listFolders();
     if (folders.length > 0) {
+      const folderIcon = styledIconUrl('folder');
       sidebarEl.appendChild(heading('Folders'));
       for (const folder of folders) {
         sidebarEl.appendChild(sidebarItem({
-          icon: folder.icon,
+          icon: folderIcon,
           name: folder.name,
           active: isSelected('folder', folder.id),
           onClick: () => select({ type: 'folder', id: folder.id }),
@@ -147,7 +151,7 @@ export function init(container, folderId) {
     const files = entries.filter((e) => e.kind !== 'album');
 
     for (const album of albums) {
-      const entry = makeEntry(viewMode, { icon: '📁', name: album.name });
+      const entry = makeEntry(viewMode, { icon: styledIconUrl('folder'), name: album.name });
       entry.mainEl.addEventListener('click', () => select({ type: 'album', catKey: cat.key, albumId: album.id }));
       listEl.appendChild(entry.el);
     }
@@ -192,6 +196,9 @@ export function init(container, folderId) {
   // a folder created/renamed/filed/emptied elsewhere (the desktop, another
   // File Explorer window, the right-click menu) should show up here too
   document.addEventListener('os:folders-changed', render);
+  // every folder icon (sidebar list + any open album) changes at once
+  // when the Settings app's icon style (blue/yellow) does
+  document.addEventListener('os:icon-style-changed', render);
 
   render();
 }
@@ -207,8 +214,11 @@ function sidebarItem({ icon, name, active, onClick }) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'explorer-sidebar-item' + (active ? ' is-active' : '');
+  const iconHtml = isImageIcon(icon)
+    ? `<img class="explorer-sidebar-icon explorer-sidebar-icon-img" src="${icon}" alt="" draggable="false">`
+    : `<span class="explorer-sidebar-icon">${icon}</span>`;
   btn.innerHTML = `
-    <span class="explorer-sidebar-icon">${icon}</span>
+    ${iconHtml}
     <span class="explorer-sidebar-name">${name}</span>
   `;
   btn.addEventListener('click', onClick);
@@ -234,7 +244,9 @@ function row({ icon, name, kind = 'default', removable = false, thumbnailUrl = n
   mainEl.className = 'explorer-row-main';
   const iconHtml = thumbnailUrl
     ? `<img class="explorer-row-icon explorer-row-thumb" src="${thumbnailUrl}" alt="">`
-    : `<span class="explorer-row-icon">${icon}</span>`;
+    : isImageIcon(icon)
+      ? `<img class="explorer-row-icon explorer-row-icon-img icon-glow" src="${icon}" alt="" draggable="false">`
+      : `<span class="explorer-row-icon">${icon}</span>`;
   mainEl.innerHTML = `
     ${iconHtml}
     <span class="explorer-row-name">${name}</span>
@@ -264,7 +276,9 @@ function cell({ icon, name, kind = 'default', removable = false, thumbnailUrl = 
   mainEl.className = 'explorer-cell';
   const iconHtml = thumbnailUrl
     ? `<img class="explorer-cell-icon explorer-cell-thumb" src="${thumbnailUrl}" alt="">`
-    : `<span class="explorer-cell-icon">${icon}</span>`;
+    : isImageIcon(icon)
+      ? `<img class="explorer-cell-icon explorer-cell-icon-img icon-glow" src="${icon}" alt="" draggable="false">`
+      : `<span class="explorer-cell-icon">${icon}</span>`;
   mainEl.innerHTML = `
     ${iconHtml}
     <span class="explorer-cell-name">${name}</span>

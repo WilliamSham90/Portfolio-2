@@ -64,6 +64,11 @@
     line-height: 1;
     flex-shrink: 0;
   }
+  .explorer-sidebar-icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
 
   .explorer-sidebar-name {
     overflow: hidden;
@@ -170,6 +175,12 @@
     line-height: 1;
     flex-shrink: 0;
   }
+  .explorer-row-icon-img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
 
   .explorer-row-thumb {
     width: 22px;
@@ -251,6 +262,11 @@
   .explorer-cell-icon {
     font-size: 26px;
     line-height: 1;
+  }
+  .explorer-cell-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
   }
 
   .explorer-cell-thumb {

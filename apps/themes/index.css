@@ -1,4 +1,4 @@
-@scope (.themes-app) {
+@scope (.settings-app) {
   :scope {
     padding: 22px 24px 26px;
     font-family: var(--font-main);
@@ -9,12 +9,24 @@
        the default, unresized window */
   }
 
-  .themes-intro {
+  .settings-section + .settings-section {
+    margin-top: 26px;
+  }
+
+  .settings-section-title {
+    margin: 0 0 6px;
+    font: var(--fs-md) var(--font-accent);
+    color: var(--win-text);
+  }
+
+  .settings-section-intro {
     margin: 0 0 16px;
     font: var(--fs-sm) var(--font-mono);
     color: var(--win-text);
     opacity: 0.75;
   }
+
+  /* ---------- theme picker ---------- */
 
   .theme-list {
     display: grid;
@@ -92,5 +104,52 @@
   .theme-card.is-active .theme-font-label {
     opacity: 0.85;
     color: var(--card-accent);
+  }
+
+  /* ---------- icon style picker ---------- */
+
+  .icon-style-list {
+    display: flex;
+    gap: 12px;
+  }
+
+  .icon-style-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 96px;
+    padding: 12px 10px;
+    border: 2px solid rgba(0,0,0,0.12);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .icon-style-card:hover,
+  .icon-style-card:focus-visible {
+    transform: translateY(-2px);
+    outline: none;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+  }
+  .icon-style-card.is-active {
+    border-color: var(--hotrose);
+    box-shadow: 0 0 0 1px var(--hotrose), 0 8px 18px rgba(0,0,0,0.18);
+  }
+
+  .icon-style-preview {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+  }
+
+  .icon-style-name {
+    font: var(--fs-sm) var(--font-mono);
+    color: var(--win-text);
+    text-align: center;
+  }
+  .icon-style-card.is-active .icon-style-name {
+    color: var(--hotrose);
+    font-weight: 600;
   }
 }
