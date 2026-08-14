@@ -1,4 +1,4 @@
-import { listFolders, fileAppIntoFolder, renameFolder } from '../../folders.js';
+import { listFolders, fileAppIntoFolder, renameFolder } from '../../js/folders.js';
 
 const STORAGE_KEY = 'os-app-grid-slots-v1';
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag, not a tap

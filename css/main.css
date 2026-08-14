@@ -1,0 +1,322 @@
+/* =====================================================================
+   main.css
+   The ONLY place layout/size decisions get made, and the DEFAULT values
+   for every color + font token (so the page still looks right even
+   before JS runs). Every widget/app should style itself using these
+   custom properties (var(--rose), var(--font-mono), etc.) instead of
+   hard-coding values.
+
+   The actual *theme* — which colors and font these tokens hold — is
+   picked at runtime by theme.js (see /themes): it overwrites these same
+   custom properties on :root, so nothing outside this file needs to
+   know theming exists. Default theme here is "Dial-Up Dream".
+   ===================================================================== */
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- THEME TOKENS ----------
+   Default values = the "Dial-Up Dream" theme (themes/dial-up-dream.js).
+   theme.js overwrites all of these (plus the *-rgb triplets, used by the
+   rgba() gradients/glows below) the moment a theme is applied — including
+   on first load, from whatever theme was last saved. Edit here to change
+   what an unthemed page looks like; edit /themes to add or change a
+   theme itself. */
+:root {
+  /* palette */
+  --pearl:     #dad4c9;
+  --pearl-rgb: 218, 212, 201;
+  --rose:      #ffd183;
+  --rose-rgb:  255, 209, 131;
+  --hotrose:   #eeb24a;
+  --hotrose-rgb: 238, 178, 74;
+  --aqua:      #5a8bde;
+  --aqua-rgb:  90, 139, 222;
+  --lilac:     #b89ce9;
+  --lilac-rgb: 184, 156, 233;
+
+  --text:       #dad4c9;
+  --text-soft:  #deada5;
+  --text-muted: #b89ce9;
+  --text-dark:  #272a32;
+
+  --paper:      #dad4c9;
+  --paper-text: #272a32;
+
+  --border:        #deada5;
+  --border-bright: #dad4c9;
+
+  --btn-bg:   #dad4c9;
+  --btn-bg2:  #ffd183;
+  --btn-bg3:  #5a8bde;
+  --btn-text: #272a32;
+
+  --win-bg:    #deada5;
+  --win-title: #dc6250;
+  --win-text:  #272a32;
+
+  --wrap-a: #272a32;
+  --wrap-b: #21525a;
+  --wrap-c: #272a32;
+
+  --glass: linear-gradient(135deg, rgba(var(--pearl-rgb),0.20), rgba(var(--aqua-rgb),0.14), rgba(var(--rose-rgb),0.16));
+  --glass-border: rgba(255,255,255,0.42);
+
+  /* type */
+  --font-main:   'Quicksand', 'Trebuchet MS', Arial, sans-serif;
+  --font-mono:   'Courier New', monospace;
+  --font-accent: 'Quicksand', 'Trebuchet MS', Arial, sans-serif;
+
+  --fs-xs:   10px;
+  --fs-sm:   12px;
+  --fs-base: 14px;
+  --fs-md:   16px;
+  --fs-lg:   20px;
+
+  /* layout */
+  --taskbar-height: 52px;
+  --radius: 6px;
+}
+
+body {
+  font-family: var(--font-main);
+  font-size: var(--fs-base);
+  color: var(--text);
+  background: #121212;
+  overflow: hidden; /* an OS desktop doesn't scroll */
+}
+
+/* =====================================================================
+   OS SHELL — this part lives in index.html itself. Everything else
+   (icons, windows, app content) is injected into the empty slots below.
+   ===================================================================== */
+
+#desktop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(var(--hotrose-rgb),0.24), transparent 34%),
+    radial-gradient(circle at 80% 22%, rgba(var(--aqua-rgb),0.20), transparent 36%),
+    radial-gradient(circle at 50% 80%, rgba(var(--lilac-rgb),0.20), transparent 36%),
+    linear-gradient(135deg, var(--wrap-a), var(--wrap-b) 48%, var(--wrap-c));
+}
+
+/* the canvas apps live on, above the wallpaper, below the taskbar */
+#desktop-canvas {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* slot the app-grid widget renders its icons into */
+#app-grid-root {
+  position: absolute;
+  inset: 0;
+}
+
+/* slot popup windows get appended into, one per open app */
+#popup-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* empty layer shouldn't block clicks on the grid */
+}
+#popup-layer > * {
+  pointer-events: auto; /* but an actual open window should */
+}
+
+/* ---------- TASKBAR (bottom, always present) ---------- */
+#taskbar {
+  height: var(--taskbar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  background: rgba(20,14,20,0.7);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font: var(--fs-sm) var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+#taskbar-brand {
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+#taskbar-clock {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* one button per open window, appended/removed by main.js */
+#taskbar-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#taskbar-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.taskbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: var(--glass);
+  color: var(--text-soft);
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.taskbar-tab:hover,
+.taskbar-tab:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+.taskbar-tab.is-minimized {
+  opacity: 0.55;
+}
+
+/* ---------- RIGHT-CLICK MENU (context-menu.js) ---------- */
+.context-menu {
+  position: fixed;
+  z-index: 1000; /* windows top out around 10s (see widget/popup), so this
+                    only ever needs to clear those, not fight them */
+  margin: 0;
+  padding: 6px;
+  min-width: 180px;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+}
+.context-menu[hidden] {
+  display: none;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--text);
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.context-menu-item:hover,
+.context-menu-item:focus-visible {
+  background: rgba(255,255,255,0.2);
+  outline: none;
+}
+
+/* ---------- CONFIRM DIALOG (confirm-dialog.js) ---------- */
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1100; /* above the context menu (1000) and every window */
+  display: grid;
+  place-items: center;
+}
+.confirm-dialog[hidden] {
+  display: none;
+}
+
+.confirm-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+
+.confirm-dialog-panel {
+  position: relative;
+  width: min(320px, 86vw);
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.4);
+}
+
+.confirm-dialog-message {
+  margin: 0 0 16px;
+  font: var(--fs-base) var(--font-main);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirm-dialog-actions button {
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.confirm-dialog-cancel {
+  background: transparent;
+  color: var(--text);
+}
+.confirm-dialog-cancel:hover,
+.confirm-dialog-cancel:focus-visible {
+  background: rgba(255,255,255,0.15);
+  outline: none;
+}
+
+.confirm-dialog-confirm {
+  background: rgba(var(--hotrose-rgb), 0.35);
+  border-color: rgba(var(--hotrose-rgb), 0.6);
+  color: var(--text);
+  font-weight: 600;
+}
+.confirm-dialog-confirm:hover,
+.confirm-dialog-confirm:focus-visible {
+  background: rgba(var(--hotrose-rgb), 0.5);
+  outline: none;
+}
+
+.context-menu-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+.taskbar-tab.is-active {
+  color: var(--text);
+  border-color: var(--pearl);
+  background: linear-gradient(90deg, rgba(var(--hotrose-rgb),0.4), rgba(var(--aqua-rgb),0.3));
+}

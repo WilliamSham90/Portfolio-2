@@ -1,4 +1,4 @@
-import { listThemes, getActiveThemeId } from '../../theme.js';
+import { listThemes, getActiveThemeId } from '../../js/theme.js';
 
 /**
  * Called by loader.js after this app's HTML is mounted.

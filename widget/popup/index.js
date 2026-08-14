@@ -1,4 +1,4 @@
-import { loadWidget } from '../../loader.js';
+import { loadWidget } from '../../js/loader.js';
 
 // shared across every popup instance (this module is a singleton),
 // so "bring to front" just means "give it a higher number than anyone else"

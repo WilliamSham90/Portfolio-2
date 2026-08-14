@@ -4,14 +4,21 @@
 
 ```
 Portfolio/
-├── index.html              OS shell only: wallpaper canvas + bottom taskbar
-├── main.css                 layout/size tokens + DEFAULT color/font tokens
-├── main.js                  the "kernel": app registry, boots widgets, wires the taskbar
-├── loader.js                shared engine used by everything below (see next section)
-├── theme.js                  the "theme kernel" — applies a theme's colors/font to :root
-├── folders.js                the "folders kernel" — desktop folders are virtual (see "Folders")
-├── context-menu.js           replaces the right-click menu (see "Right-click menu")
-├── confirm-dialog.js          themed window.confirm() replacement, used before deleting a folder
+├── index.html              OS shell only: wallpaper canvas + bottom taskbar — the
+│                            only HTML file, and only file left loose at the root
+├── README.md
+│
+├── css/
+│   └── main.css              layout/size tokens + DEFAULT color/font tokens
+│
+├── js/                      the "kernel" — everything OS-shell-level that isn't a
+│   │                        widget/app (see "Adding a new app later")
+│   ├── main.js                app registry, boots widgets, wires the taskbar
+│   ├── loader.js              shared engine used by every widget/app (see next section)
+│   ├── theme.js                the "theme kernel" — applies a theme's colors/font to :root
+│   ├── folders.js              the "folders kernel" — desktop folders are virtual (see "Folders")
+│   ├── context-menu.js         replaces the right-click menu (see "Right-click menu")
+│   └── confirm-dialog.js        themed window.confirm() replacement, used before deleting a folder
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -28,7 +35,8 @@ Portfolio/
 │   ├── music/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
 │   ├── pdf/
-│   └── videos/
+│   ├── videos/
+│   └── system/                OS-chrome media, deliberately NOT shown in the Explorer
 │
 ├── widget/
 │   ├── app-grid/             icon grid widget — sits on top of the desktop
@@ -57,8 +65,8 @@ Portfolio/
 
 Every widget and every app is the same shape: a folder with `index.html`
 (markup), `index.css` (its own look), `index.js` (its own behavior,
-exporting an `init(container, ...args)` function). `loader.js` is the one
-shared piece of "kernel" code that knows how to load any of them — no
+exporting an `init(container, ...args)` function). `js/loader.js` is the
+one shared piece of "kernel" code that knows how to load any of them — no
 iframes involved:
 
 1. fetches the folder's `index.html` and injects it into a container
@@ -75,9 +83,9 @@ naming for this.
 
 ## How opening an app actually happens
 
-1. `main.js` boots `widget/app-grid/`, handing it the list of installed apps.
+1. `js/main.js` boots `widget/app-grid/`, handing it the list of installed apps.
 2. Clicking an icon fires a plain DOM event: `os:launch-app`.
-3. `main.js` catches that event and loads a **fresh instance** of
+3. `js/main.js` catches that event and loads a **fresh instance** of
    `widget/popup/` into `#popup-layer` (so you can have several windows
    open at once).
 4. `widget/popup/index.js` sets its own title/close button, then calls
@@ -87,30 +95,30 @@ naming for this.
 ## Theming
 
 Every color/font a widget or app uses is a CSS custom property declared in
-`main.css` (`--rose`, `--font-main`, etc.) — nothing new there. What's new
-is that those values can be swapped as a set at runtime:
+`css/main.css` (`--rose`, `--font-main`, etc.) — nothing new there. What's
+new is that those values can be swapped as a set at runtime:
 
 - Each file in `themes/` exports one plain object: an `id`, a display
   `name`, a `fonts.display` choice (with a safe fallback stack), and a
-  `colors` map — one hex value per token `main.css` declares. No logic,
-  just data, so adding a 7th theme later is "copy a file, change the
-  values, add one import in `theme.js`."
-- `theme.js` is the only thing that reads them. `initTheme()` runs first
-  thing in `main.js`'s `boot()`, applies the saved theme (`localStorage`,
-  falls back to Dial-Up Dream) by writing every color straight onto
-  `:root` as the *same* custom properties `main.css` already defines —
-  so every existing widget/app re-skins with zero changes. Five of the
-  colors (pearl/rose/hotrose/aqua/lilac — the ones used in translucent
-  gradients/glows) also get an auto-derived `--x-rgb` triplet so
-  `rgba(var(--hotrose-rgb), 0.3)` works without hand-maintaining a second
-  copy of every accent color.
+  `colors` map — one hex value per token `css/main.css` declares. No
+  logic, just data, so adding a 7th theme later is "copy a file, change
+  the values, add one import in `js/theme.js`."
+- `js/theme.js` is the only thing that reads them. `initTheme()` runs
+  first thing in `js/main.js`'s `boot()`, applies the saved theme
+  (`localStorage`, falls back to Dial-Up Dream) by writing every color
+  straight onto `:root` as the *same* custom properties `css/main.css`
+  already defines — so every existing widget/app re-skins with zero
+  changes. Five of the colors (pearl/rose/hotrose/aqua/lilac — the ones
+  used in translucent gradients/glows) also get an auto-derived
+  `--x-rgb` triplet so `rgba(var(--hotrose-rgb), 0.3)` works without
+  hand-maintaining a second copy of every accent color.
 - `apps/themes/` is a normal app: it lists every theme (`listThemes()`)
   as a card previewing that theme's own gradient/swatches/font, and
   clicking one fires `document.dispatchEvent(new CustomEvent('os:set-theme', ...))`
   — the same loose "fire an event, kernel handles it" pattern `os:launch-app`
-  already uses. `theme.js` listens for that event, applies the theme, and
-  broadcasts `os:theme-changed` so any open Themes windows update their
-  "active" state together.
+  already uses. `js/theme.js` listens for that event, applies the theme,
+  and broadcasts `os:theme-changed` so any open Themes windows update
+  their "active" state together.
 
 ### Theme fonts
 
@@ -146,34 +154,38 @@ rules to `themes/fonts.css`, and point that theme's `fonts.display.family`
 ## Assets
 
 `assets/` is shared media any widget or app can use — `images/`, `music/`,
-`fonts/`, `pdf/`, `videos/`. Each subfolder has its own short README.
-The one thing worth knowing: because `loader.js` inlines every widget's
-and app's `index.html` into the one real page, a relative path behaves
-differently depending on where it's written from (CSS vs. HTML vs. JS).
-`assets/README.md` has the full breakdown and examples — read it before
-wiring up the first image/font/audio reference from inside a widget/app.
+`fonts/`, `pdf/`, `videos/`, `system/`. Each subfolder has its own short
+README. The one thing worth knowing: because `js/loader.js` inlines every
+widget's and app's `index.html` into the one real page, a relative path
+behaves differently depending on where it's written from (CSS vs. HTML
+vs. JS). `assets/README.md` has the full breakdown and examples — read it
+before wiring up the first image/font/audio reference from inside a
+widget/app.
 
 `assets/manifest.js` is a separate, related thing: the list of files the
 **File Explorer app** can browse (see "Folders" below). A static site has
-no way to ask "what's in this folder", so — same as `APPS` in `main.js` —
-files are listed by hand rather than discovered automatically.
+no way to ask "what's in this folder", so — same as `APPS` in
+`js/main.js` — files are listed by hand rather than discovered
+automatically. `assets/system/` is the one subfolder deliberately left
+out of both the Explorer's categories and this manifest — it's for the
+OS's own chrome, not user-browsable media.
 
 ## Folders
 
 Desktop folders and the File Explorer ("My Computer") work together:
 
 - A folder is virtual — `{id, name, icon, appIds}` — since this is a
-  static site with no backend to create a real one on disk. `folders.js`
-  (root-level, same shared-kernel pattern as `theme.js`) is the only
-  thing that reads/writes them, via `localStorage`. Any change fires
+  static site with no backend to create a real one on disk. `js/folders.js`
+  (same shared-kernel pattern as `js/theme.js`) is the only thing that
+  reads/writes them, via `localStorage`. Any change fires
   `os:folders-changed` on `document`, so the desktop and every open File
   Explorer window can re-render themselves.
 - Folders live as regular icons on the desktop grid, right alongside
-  apps — `widget/app-grid` asks `folders.js` for the current list and
+  apps — `widget/app-grid` asks `js/folders.js` for the current list and
   draws them with the exact same draggable/swappable icon it already
   uses for apps (see "Icon grid" below). Clicking one fires
-  `os:open-folder` instead of `os:launch-app`; `main.js` catches that and
-  opens **My Computer** straight into that folder.
+  `os:open-folder` instead of `os:launch-app`; `js/main.js` catches that
+  and opens **My Computer** straight into that folder.
 - **Filing an app away**: drag an app icon and drop it *onto* a folder
   icon (same drag system as reordering — dropping onto an occupied cell
   already means "something happens here", this is just the folder case
@@ -189,8 +201,8 @@ Desktop folders and the File Explorer ("My Computer") work together:
   HTML and browsers get flaky about focus/selection when you do it anyway
   (see `startRename()` in `widget/app-grid/index.js`).
 - **Deleting a folder**: right-click → Delete asks for confirmation first
-  (`confirm-dialog.js` — a themed stand-in for `window.confirm()`, since a
-  bare browser dialog would clash with the rest of the UI) and mentions
+  (`js/confirm-dialog.js` — a themed stand-in for `window.confirm()`,
+  since a bare browser dialog would clash with the rest of the UI) and mentions
   how many apps are inside, if any. Deleting doesn't touch what was filed
   inside it — `deleteFolder()` just removes the folder itself, and since
   the desktop only ever *excludes* an app because some existing folder's
@@ -215,14 +227,14 @@ Desktop folders and the File Explorer ("My Computer") work together:
 
 ## Right-click menu
 
-`context-menu.js` swaps the browser's native right-click menu for the
+`js/context-menu.js` swaps the browser's native right-click menu for the
 OS's own, everywhere on the page. What it shows depends on the target:
 right-clicking a folder icon gets Open/Rename/Delete; anywhere else gets
 the general desktop menu (New Folder / My Computer / Settings — the last
 one just opens the Themes app for now, there's no separate Settings app
 yet). To add a menu item, add one `{icon, label, run}` entry to
-`DESKTOP_ITEMS` (or `folderItems()`) in `context-menu.js` — same shape as
-`APPS` in `main.js`.
+`DESKTOP_ITEMS` (or `folderItems()`) in `js/context-menu.js` — same shape
+as `APPS` in `js/main.js`.
 
 **Shift+right-click still opens the real browser menu** — the handler
 checks `event.shiftKey` and simply doesn't call `preventDefault()` when
@@ -234,7 +246,7 @@ Ctrl+Shift+I) were never intercepted in the first place.
 
 1. Duplicate `apps/hello-world/` → `apps/your-app/`.
 2. Build it — it's just a normal self-contained HTML/CSS/JS page fragment.
-3. Add one line to the `APPS` array at the top of `main.js`:
+3. Add one line to the `APPS` array at the top of `js/main.js`:
    ```js
    { id: 'your-app', name: 'Your App', icon: '✨', path: './apps/your-app/' }
    ```
@@ -251,13 +263,13 @@ clicking `index.html` will not work.
 
 1. Create a new **public** repository on github.com (Pages' free tier requires public).
 2. On the repo page: **Add file → Upload files**, then drag in everything
-   *inside* the `Portfolio` folder (`index.html`, `main.css`, `main.js`,
-   `loader.js`, `theme.js`, and the `widget/`, `apps/`, `themes/` and
-   `assets/` folders) — not the `Portfolio` folder itself, its contents,
-   so `index.html` ends up at the repo root. Commit the changes. (Git
-   can't track a truly empty folder, so if one of the `assets/`
-   subfolders is still empty, it just won't appear on GitHub until it has
-   a file in it — that's normal, nothing to fix.)
+   *inside* the `Portfolio` folder (`index.html`, `README.md`, and the
+   `css/`, `js/`, `widget/`, `apps/`, `themes/` and `assets/` folders) —
+   not the `Portfolio` folder itself, its contents, so `index.html` ends
+   up at the repo root. Commit the changes. (Git can't track a truly
+   empty folder, so if one of the `assets/` subfolders is still empty, it
+   just won't appear on GitHub until it has a file in it — that's normal,
+   nothing to fix.)
 3. Go to **Settings → Pages**. Under "Build and deployment", set
    **Source: Deploy from a branch**, branch **main**, folder **/(root)**. Save.
 4. Wait about a minute, then visit `https://<your-username>.github.io/<repo-name>/`.
@@ -287,8 +299,8 @@ command line) is the standard way — but it's optional, not required.
   occupied one swaps both, each animated into place with a small
   FLIP-style transition.
 - Layout is per-browser (`localStorage`), keyed by app id, so a new app
-  added to `APPS` just gets appended to the first free slot instead of
-  disturbing anyone's arrangement.
+  added to `APPS` (in `js/main.js`) just gets appended to the first free
+  slot instead of disturbing anyone's arrangement.
 - A `ResizeObserver` recomputes the column count on resize (or mobile
   orientation change) and re-lays out every icon accordingly.
 
@@ -301,9 +313,9 @@ command line) is the standard way — but it's optional, not required.
   never end up partially off-screen or hidden behind the taskbar.
 - Clicking anywhere on a window (or its taskbar tab) raises its z-index
   above every other window and fires a `popup:activated` event.
-- `main.js` listens for that event and keeps one `.taskbar-tab` button in
-  `#taskbar-tabs` per open window, highlighting whichever one is active
-  and removing the tab automatically when that window is closed.
+- `js/main.js` listens for that event and keeps one `.taskbar-tab` button
+  in `#taskbar-tabs` per open window, highlighting whichever one is
+  active and removing the tab automatically when that window is closed.
 - **Maximize** (titlebar button, or double-click the titlebar) fills the
   desktop area — `#popup-layer`, i.e. up to the taskbar — via a CSS class
   (`.is-maximized`), *not* the browser's real Fullscreen API. That's on
@@ -316,11 +328,11 @@ command line) is the standard way — but it's optional, not required.
   and dims its taskbar tab. Clicking that tab again restores it; clicking
   the tab of the window that's already active minimizes it instead — the
   same toggle either way, `popup:toggle-minimize`, decided by
-  `main.js`'s tab click handler based on the tab's current classes.
+  `js/main.js`'s tab click handler based on the tab's current classes.
 
 ## Roadmap (not built yet, on purpose)
 
-- **Mobile OS mode**: `main.css` already isolates all sizing into tokens
-  and the shell is a single flex column, so a mobile layout can likely be
-  a second stylesheet + a small breakpoint/JS check later, without
-  touching any widget or app.
+- **Mobile OS mode**: `css/main.css` already isolates all sizing into
+  tokens and the shell is a single flex column, so a mobile layout can
+  likely be a second stylesheet + a small breakpoint/JS check later,
+  without touching any widget or app.

@@ -1,5 +1,5 @@
-import { APPS } from '../../main.js';
-import { listFolders, getFolder, removeAppFromFolder } from '../../folders.js';
+import { APPS } from '../../js/main.js';
+import { listFolders, getFolder, removeAppFromFolder } from '../../js/folders.js';
 import manifest from '../../assets/manifest.js';
 
 const CATEGORIES = [
