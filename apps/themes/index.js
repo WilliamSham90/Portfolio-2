@@ -1,5 +1,6 @@
 import { listThemes, getActiveThemeId } from '../../js/theme.js';
 import { listIconStyles, getIconStyle, setIconStyle } from '../../js/icon-style.js';
+import { listWallpapers, getWallpaperId, setWallpaper } from '../../js/wallpaper.js';
 
 /**
  * Called by loader.js after this app's HTML is mounted.
@@ -8,6 +9,7 @@ import { listIconStyles, getIconStyle, setIconStyle } from '../../js/icon-style.
 export function init(container) {
   initThemeSection(container);
   initIconStyleSection(container);
+  initWallpaperSection(container);
 }
 
 function initThemeSection(container) {
@@ -76,6 +78,42 @@ function initIconStyleSection(container) {
       <span class="icon-style-name">${style.name}${isActive ? ' · active' : ''}</span>
     `;
     card.addEventListener('click', () => setIconStyle(style.id));
+    return card;
+  }
+
+  render();
+}
+
+function initWallpaperSection(container) {
+  const list = container.querySelector('.wallpaper-list');
+  const wallpapers = listWallpapers();
+  let activeId = getWallpaperId();
+
+  document.addEventListener('os:wallpaper-changed', (event) => {
+    activeId = event.detail.id;
+    render();
+  });
+
+  function render() {
+    list.replaceChildren(...wallpapers.map((wallpaper) => buildCard(wallpaper, wallpaper.id === activeId)));
+  }
+
+  function buildCard(wallpaper, isActive) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'wallpaper-card' + (isActive ? ' is-active' : '');
+    card.setAttribute('aria-pressed', String(isActive));
+    // "None" gets the same gradient the desktop itself falls back to
+    // (--desktop-gradient, main.css) instead of an <img> — there's no
+    // photo to fetch for it, so it shouldn't request one
+    const previewHtml = wallpaper.url
+      ? `<img class="wallpaper-preview" src="${wallpaper.url}" alt="" draggable="false" loading="lazy" decoding="async">`
+      : `<span class="wallpaper-preview wallpaper-preview-none"></span>`;
+    card.innerHTML = `
+      ${previewHtml}
+      <span class="wallpaper-name">${wallpaper.name}${isActive ? ' · active' : ''}</span>
+    `;
+    card.addEventListener('click', () => setWallpaper(wallpaper.id));
     return card;
   }
 

@@ -15,7 +15,14 @@ export default {
   colors: {
     pearl: '#dad4c9',
     rose: '#ffd183',
-    hotrose: '#eeb24a',
+    // was #eeb24a — a pale butter-yellow that only ever worked as a glow
+    // color over the dark desktop background; as *text* (accent labels,
+    // borders) over this theme's own light winBg (#deada5), the two sat
+    // at ~1.1:1 contrast, functionally invisible. This amber reads as
+    // ~5:1 against winBg (WCAG AA needs 4.5:1) and still glows warm
+    // against dark surfaces — arguably more "amber CRT monitor" for a
+    // theme called Dial-Up Dream anyway.
+    hotrose: '#6b3208',
     aqua: '#5a8bde',
     lilac: '#b89ce9',
 

@@ -21,6 +21,7 @@ Portfolio/
 │   ├── confirm-dialog.js        themed window.confirm() replacement, used before deleting a folder
 │   ├── icon.js                  isImageIcon() — one shared image-vs-emoji icon check (see "Icons")
 │   ├── icon-style.js             the "icon style kernel" — blue/yellow folder icons (see "Icons")
+│   ├── wallpaper.js             the "wallpaper kernel" — desktop background photo (see "Wallpaper")
 │   ├── start-menu.js             the taskbar's Start button + its dropdown (see "Start menu")
 │   ├── power.js                  the shut-down/boot-up overlay (see "Start menu")
 │   ├── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
@@ -38,6 +39,9 @@ Portfolio/
 ├── assets/                  shared media the whole OS can use (see "Assets")
 │   ├── manifest.js           registry of files the File Explorer can browse
 │   ├── images/
+│   │   └── Background Images/  the 12 wallpaper photos (see "Wallpaper") — NOT in
+│   │                            manifest.js, so they don't also show up as a browsable
+│   │                            Explorer album alongside the desktop wallpaper picker
 │   ├── music/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
 │   ├── pdf/
@@ -125,9 +129,10 @@ naming for this.
 
 This is the "Theme" half of the **Settings** app (`apps/themes/` — the
 folder wasn't renamed, only the app's `name`/`id` in `APPS`, since it's
-still fundamentally the same theme-picking code, just with an "Icon
-Style" section added alongside it now — see "Icons"). Every color/font a
-widget or app uses is a CSS custom property declared in
+still fundamentally the same theme-picking code, just with "Icon Style"
+and "Wallpaper" sections added alongside it now — see "Icons" and
+"Wallpaper"). Every color/font a widget or app uses is a CSS custom
+property declared in
 `css/main.css` (`--rose`, `--font-main`, etc.) — nothing new there. What's
 new is that those values can be swapped as a set at runtime:
 
@@ -152,6 +157,18 @@ new is that those values can be swapped as a set at runtime:
   already uses. `js/theme.js` listens for that event, applies the theme,
   and broadcasts `os:theme-changed` so any open Themes windows update
   their "active" state together.
+- **A theme's `hotrose` needs to work as *text*, not just as a glow.**
+  It's the one accent color used both ways — a translucent glow over dark
+  surfaces (`rgba(var(--hotrose-rgb), 0.3)`-style, all over the desktop)
+  *and* solid, as accent text/borders over a theme's own light surfaces
+  (`--win-bg`/`--paper`, e.g. `apps/system-info`'s key labels). Dial-Up
+  Dream's original `hotrose` (`#eeb24a`, a pale butter-yellow) was picked
+  looking only at the first case — gorgeous as a glow, but ~1.1:1 contrast
+  against that theme's own `--win-bg` as text, i.e. functionally invisible
+  (WCAG AA wants 4.5:1). Fixed by darkening it to a deeper amber
+  (`#6b3208`, ~5:1) — still glows warm on dark backgrounds, now actually
+  readable as text too. Worth checking both contexts for any future
+  theme's `hotrose`, not just how it looks as a glow.
 
 ### Theme fonts
 
@@ -231,6 +248,43 @@ flag threaded through the data.
   entirely.
 - Picked from the **Icon Style** section of the Settings app (same
   active-indicator-card pattern as the theme picker just above it).
+
+## Wallpaper
+
+`js/wallpaper.js` (same shared-kernel shape as `theme.js`/`icon-style.js`)
+owns the desktop's background photo — one of the twelve files under
+`assets/images/Background Images/`, or **None**, which isn't a special
+case threaded through the module but a real entry whose `file` is `null`
+— falling back to `--desktop-gradient` (`css/main.css`, factored out into
+its own token specifically so the "None" card in the picker and the
+desktop itself can share the exact same value rather than the picker
+re-implementing what "no wallpaper" looks like). Default is **Cat**
+(`cat wallpaper.webp`).
+
+- Applying a choice is one `setProperty('--wallpaper-image', ...)` call
+  on `:root`, read by `#desktop-wallpaper` — a dedicated absolutely-
+  positioned layer painted over `#desktop`'s own gradient background
+  (not `#desktop`'s `background-image` directly), so the two don't have
+  to be juggled as one `background` shorthand with matching layer counts
+  for `background-size`/`position` between the "photo" and "no photo"
+  states.
+- **Loaded once, on purpose.** The URL for a given wallpaper is always
+  built the same way — `new URL(file, import.meta.url).href`, no
+  cache-busting query string, same pattern every other asset URL in this
+  codebase uses — so setting `--wallpaper-image` to a choice already
+  showing, or shown earlier this session, is a browser HTTP cache hit,
+  never a second fetch. There's nothing to track here to make that true;
+  it's just what a stable URL gets you for free.
+- The Settings app's **Wallpaper** section lists all thirteen options
+  (`listWallpapers()`) as cards with a real photo thumbnail each — except
+  **None**, which previews `--desktop-gradient` directly rather than
+  fetching an image for something that has no photo to show. The
+  thumbnails are real (if browser-cached) image requests, same tradeoff
+  `apps/file-explorer`'s image rows/cells already make: this is a static
+  site with no build step to pre-generate smaller thumbnail files, so a
+  correctly-sized `<img>` (`loading="lazy"`, `decoding="async"`) scaling
+  the real photo down is the honest, achievable option, not a shortcut
+  taken carelessly.
 
 ## Assets
 

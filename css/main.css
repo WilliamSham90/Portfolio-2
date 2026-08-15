@@ -72,6 +72,20 @@ button {
   --glass: linear-gradient(135deg, rgba(var(--pearl-rgb),0.20), rgba(var(--aqua-rgb),0.14), rgba(var(--rose-rgb),0.16));
   --glass-border: rgba(255,255,255,0.42);
 
+  /* the desktop's own look with no wallpaper photo selected — a named
+     token (not just inlined into #desktop) so the "None" option in the
+     Settings wallpaper picker can preview the exact same thing, see
+     .wallpaper-option-none in apps/themes/index.css */
+  --desktop-gradient:
+    radial-gradient(circle at 18% 20%, rgba(var(--hotrose-rgb),0.24), transparent 34%),
+    radial-gradient(circle at 80% 22%, rgba(var(--aqua-rgb),0.20), transparent 36%),
+    radial-gradient(circle at 50% 80%, rgba(var(--lilac-rgb),0.20), transparent 36%),
+    linear-gradient(135deg, var(--wrap-a), var(--wrap-b) 48%, var(--wrap-c));
+  /* js/wallpaper.js overwrites this the moment it boots (to the saved
+     choice, or the "Cat" default) — "none" here is only what a page load
+     briefly shows before that first script runs */
+  --wallpaper-image: none;
+
   /* type */
   --font-main:   'Architects Daughter', 'Segoe Print', 'Comic Sans MS', cursive;
   --font-mono:   'Courier New', monospace;
@@ -127,11 +141,23 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(var(--hotrose-rgb),0.24), transparent 34%),
-    radial-gradient(circle at 80% 22%, rgba(var(--aqua-rgb),0.20), transparent 36%),
-    radial-gradient(circle at 50% 80%, rgba(var(--lilac-rgb),0.20), transparent 36%),
-    linear-gradient(135deg, var(--wrap-a), var(--wrap-b) 48%, var(--wrap-c));
+  background: var(--desktop-gradient);
+}
+
+/* js/wallpaper.js's chosen photo, painted over #desktop's own gradient
+   above (still visible through this when the choice is "None" — see
+   --wallpaper-image's default in :root). A separate element rather than
+   just setting #desktop's own background-image, so the two backgrounds
+   (gradient + photo) don't have to be juggled as one background shorthand
+   with matching layer counts for background-size/position. */
+#desktop-wallpaper {
+  position: absolute;
+  inset: 0;
+  background-image: var(--wallpaper-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
 }
 
 /* the canvas apps live on, above the wallpaper, below the taskbar */

@@ -7,6 +7,7 @@
 
 import { loadWidget } from './loader.js';
 import { initTheme } from './theme.js';
+import { initWallpaper } from './wallpaper.js';
 import { initContextMenu } from './context-menu.js';
 import { initStartMenu } from './start-menu.js';
 import { initPower } from './power.js';
@@ -47,9 +48,10 @@ const START_MENU_APPS = ['my-computer', 'browser', 'settings', 'system-info']
   .map((id) => ALL_APPS.find((a) => a.id === id));
 
 async function boot() {
-  // 0. apply the saved (or default) theme before anything else mounts,
-  //    so widgets never render with the wrong colors for a frame
+  // 0. apply the saved (or default) theme/wallpaper before anything else
+  //    mounts, so widgets never render with the wrong colors for a frame
   initTheme();
+  initWallpaper();
   initContextMenu();
   initPower();
   initStartMenu(START_MENU_APPS);
