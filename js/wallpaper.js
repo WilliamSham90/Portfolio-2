@@ -23,23 +23,22 @@
    ===================================================================== */
 
 const STORAGE_KEY = 'os-wallpaper';
-const DEFAULT_WALLPAPER_ID = 'cat';
+const DEFAULT_WALLPAPER_ID = 'city-night';
 
 // id -> { name, file } — file is null for "None" (the theme's own gradient)
 const WALLPAPERS = {
   none: { name: 'None (Default)', file: null },
-  cat: { name: 'Cat', file: 'cat wallpaper.webp' },
-  astronaut: { name: 'Astronaut', file: 'astronaut.webp' },
-  city: { name: 'City', file: 'city.webp' },
-  dolomites: { name: 'Dolomites', file: 'Dolomites.webp' },
-  'pragser-wildsee': { name: 'Pragser Wildsee', file: 'pragser wildsee.webp' },
-  'green-night': { name: 'Green Night', file: 'Green Night.webp' },
-  'abandoned-station': { name: 'Abandoned Station', file: 'Abandoned Station.webp' },
-  'beauty-scene': { name: 'Scenic Beauty', file: 'beauty scene.webp' },
-  'windmill-village': { name: 'Windmill Village', file: 'Windmill villagev in Netherlands.webp' },
-  'wanderers-rest': { name: "Wanderer's Rest", file: 'Wanderers rest pixel art aurora over a mountain.webp' },
-  'hunter-and-hunted': { name: 'The Hunter and the Hunted', file: 'the hunter and the hunted.webp' },
-  'friend-in-need': { name: 'A Friend in Need', file: 'Coolidge a friend in need dogs playing poker.webp' },
+  'city-night': { name: 'City Night', file: 'City Night.webp' },
+  beach: { name: 'Beach', file: 'beach.webp' },
+  flamingo: { name: 'Flamingo', file: 'Flamingo.webp' },
+  flowers: { name: 'Flowers', file: 'Flowers.webp' },
+  'japan-city': { name: 'Japan City', file: 'JapanCity.webp' },
+  jungle: { name: 'Jungle', file: 'Jungle.webp' },
+  mountain: { name: 'Mountain', file: 'Mountain.webp' },
+  nature: { name: 'Nature', file: 'Nature.webp' },
+  'trail-walk': { name: 'Trail Walk', file: 'Trail walk.webp' },
+  train: { name: 'Train', file: 'Train.webp' },
+  winter: { name: 'Winter', file: 'Winter.webp' },
 };
 
 function wallpaperUrl(file) {

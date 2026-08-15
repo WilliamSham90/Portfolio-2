@@ -18,18 +18,16 @@ function icon(filename) {
   return new URL(`../assets/system/Icons/basic/${filename}`, import.meta.url).href;
 }
 
-// placeholder icon for apps that don't have a real one yet — see
-// README.md > "Adding a new app later"
-const APP_ICON = icon('add.png');
 const BROWSER_ICON = icon('earth.png');
 const SETTINGS_ICON = icon('settings.png');
 const COMPUTER_ICON = icon('computer-storage.png');
+const CALCULATOR_ICON = icon('calculator.png');
 
 export const APPS = [
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
   { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
-  { id: 'calculator', name: 'Calculator', icon: APP_ICON, path: './apps/calculator/' },
+  { id: 'calculator', name: 'Calculator', icon: CALCULATOR_ICON, path: './apps/calculator/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 

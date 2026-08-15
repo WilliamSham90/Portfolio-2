@@ -39,9 +39,9 @@ Portfolio/
 ├── assets/                  shared media the whole OS can use (see "Assets")
 │   ├── manifest.js           registry of files the File Explorer can browse
 │   ├── images/
-│   │   └── Background Images/  the 12 wallpaper photos (see "Wallpaper") — NOT in
-│   │                            manifest.js, so they don't also show up as a browsable
-│   │                            Explorer album alongside the desktop wallpaper picker
+│   │   └── Background Images/  the 11 wallpaper photos (see "Wallpaper") — also a
+│   │                            regular Explorer album (manifest.js), not exclusive
+│   │                            to the desktop wallpaper picker
 │   ├── music/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
 │   ├── pdf/
@@ -219,9 +219,11 @@ accordingly, rather than each of them needing their own check or an extra
 flag threaded through the data.
 
 - **App icons** are set per app in `APPS` (`js/main.js`): `settings.png`,
-  `computer-storage.png`, `earth.png` (**Browser**, fixed — no more
-  per-browser-detected icon). **Calculator** still uses `add.png` as a
-  placeholder until it has a real one of its own.
+  `computer-storage.png`, `calculator.png`, `earth.png` (**Browser**,
+  fixed — no more per-browser-detected icon). Every desktop app has a
+  real icon of its own now — `add.png` isn't used as a placeholder
+  anywhere currently, though it's still there for the next app that
+  needs one before its real icon exists.
 - Every icon `<img>` is written with `draggable="false"` — without it, a
   browser's own native image-drag (the "drag to save/copy this picture"
   gesture, on by default for every `<img>`) fights the desktop's own
@@ -252,14 +254,14 @@ flag threaded through the data.
 ## Wallpaper
 
 `js/wallpaper.js` (same shared-kernel shape as `theme.js`/`icon-style.js`)
-owns the desktop's background photo — one of the twelve files under
+owns the desktop's background photo — one of the eleven files under
 `assets/images/Background Images/`, or **None**, which isn't a special
 case threaded through the module but a real entry whose `file` is `null`
 — falling back to `--desktop-gradient` (`css/main.css`, factored out into
 its own token specifically so the "None" card in the picker and the
 desktop itself can share the exact same value rather than the picker
-re-implementing what "no wallpaper" looks like). Default is **Cat**
-(`cat wallpaper.webp`).
+re-implementing what "no wallpaper" looks like). Default is **City
+Night** (`City Night.webp`).
 
 - Applying a choice is one `setProperty('--wallpaper-image', ...)` call
   on `:root`, read by `#desktop-wallpaper` — a dedicated absolutely-
@@ -275,7 +277,7 @@ re-implementing what "no wallpaper" looks like). Default is **Cat**
   showing, or shown earlier this session, is a browser HTTP cache hit,
   never a second fetch. There's nothing to track here to make that true;
   it's just what a stable URL gets you for free.
-- The Settings app's **Wallpaper** section lists all thirteen options
+- The Settings app's **Wallpaper** section lists all twelve options
   (`listWallpapers()`) as cards with a real photo thumbnail each — except
   **None**, which previews `--desktop-gradient` directly rather than
   fetching an image for something that has no photo to show. The
@@ -285,6 +287,13 @@ re-implementing what "no wallpaper" looks like). Default is **Cat**
   correctly-sized `<img>` (`loading="lazy"`, `decoding="async"`) scaling
   the real photo down is the honest, achievable option, not a shortcut
   taken carelessly.
+- The same eleven photos are also a regular **Background Images** album
+  under Images in `apps/file-explorer` (`assets/manifest.js`) — browsable
+  and openable in `apps/media-viewer` like any other album, independent
+  of the wallpaper picker; the two just happen to point at the same
+  folder, one file list kept in sync by hand in two places
+  (`js/wallpaper.js` and `assets/manifest.js`) since a static site can't
+  read a folder's contents to generate either one automatically.
 
 ## Assets
 
