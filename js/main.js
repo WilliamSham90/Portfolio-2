@@ -25,7 +25,7 @@ const SETTINGS_ICON = icon('settings.png');
 const COMPUTER_ICON = icon('computer-storage.png');
 
 export const APPS = [
-  { id: 'hello-world', name: 'Hello There', icon: APP_ICON, path: './apps/hello-world/' },
+  { id: 'calculator', name: 'Calculator', icon: APP_ICON, path: './apps/calculator/' },
   { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
@@ -41,8 +41,8 @@ const SYSTEM_INFO_APP = { id: 'system-info', name: 'System Info', icon: icon('in
 const ALL_APPS = [...APPS, SYSTEM_INFO_APP];
 
 // the Start Menu shows a curated, specifically-ordered subset of ALL_APPS
-// rather than APPS itself — no Hello There (a placeholder app, not meant
-// to be "installed"), plus System Info (not a desktop icon at all)
+// rather than APPS itself — this exact list/order was requested directly,
+// so a desktop-only app like Calculator stays off it unless asked for
 const START_MENU_APPS = ['my-computer', 'browser', 'settings', 'system-info']
   .map((id) => ALL_APPS.find((a) => a.id === id));
 

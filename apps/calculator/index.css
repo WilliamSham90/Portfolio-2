@@ -1,0 +1,87 @@
+@scope (.calc-app) {
+  :scope {
+    width: 280px;
+    padding: 20px;
+    font-family: var(--font-mono);
+  }
+
+  .calc-display {
+    margin-bottom: 16px;
+    padding: 14px 14px 10px;
+    border-radius: var(--radius);
+    background: rgba(0,0,0,0.08);
+    text-align: right;
+    /* both lines truncate rather than wrap — a running total a few dozen
+       digits long should still fit the window instead of growing it */
+    overflow: hidden;
+  }
+
+  .calc-expression {
+    min-height: 16px;
+    font: var(--fs-sm) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .calc-result {
+    font: 32px var(--font-mono);
+    color: var(--win-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .calc-pad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .calc-btn {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    color: var(--win-text);
+    font: var(--fs-md) var(--font-mono);
+    cursor: pointer;
+    transition: filter 0.1s ease, transform 0.05s ease;
+  }
+  .calc-btn:hover,
+  .calc-btn:focus-visible {
+    filter: brightness(1.08);
+    outline: none;
+  }
+  .calc-btn:active {
+    transform: scale(0.94);
+  }
+
+  .calc-btn-fn {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .calc-btn-op {
+    background: rgba(var(--hotrose-rgb), 0.35);
+    font-weight: 700;
+  }
+
+  .calc-btn-equals {
+    background: rgba(var(--hotrose-rgb), 0.65);
+    font-weight: 700;
+  }
+
+  /* a wide pill instead of a circle, spanning the 1/. columns beneath it —
+     same "0 gets more room" layout every standard calculator uses */
+  .calc-btn-zero {
+    grid-column: span 2;
+    aspect-ratio: auto;
+    justify-content: flex-start;
+    padding-left: 24px;
+    border-radius: 999px;
+  }
+}

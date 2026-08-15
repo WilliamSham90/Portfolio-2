@@ -58,7 +58,7 @@ Portfolio/
 │       └── index.js
 │
 └── apps/
-    ├── hello-world/            first app — same 3-file shape as a widget
+    ├── calculator/             standard, chained-evaluation calculator (see "Calculator")
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
@@ -202,7 +202,7 @@ flag threaded through the data.
 
 - **App icons** are set per app in `APPS` (`js/main.js`): `settings.png`,
   `computer-storage.png`, `earth.png` (**Browser**, fixed — no more
-  per-browser-detected icon). **Hello There** still uses `add.png` as a
+  per-browser-detected icon). **Calculator** still uses `add.png` as a
   placeholder until it has a real one of its own.
 - Every icon `<img>` is written with `draggable="false"` — without it, a
   browser's own native image-drag (the "drag to save/copy this picture"
@@ -366,9 +366,10 @@ importing it back from `main.js` itself, since `main.js` already imports
 import, and depending on evaluation order could hit that list before its
 `const` is initialized. `START_MENU_APPS` (`js/main.js`) is a specific,
 curated, *ordered* subset — **My Computer, Browser, Settings, System
-Info** — not `APPS` itself: no Hello There (a placeholder/demo app, not
-meant to look "installed"), plus **System Info**, which isn't a desktop
-icon at all and exists only as this one entry. Since it's not in `APPS`
+Info** — not `APPS` itself: this exact list/order was requested directly,
+so a desktop-only app (Calculator) stays off it unless asked for, plus
+**System Info**, which isn't a desktop icon at all and exists only as
+this one entry. Since it's not in `APPS`
 (which also drives the desktop grid), `js/main.js` keeps a second list,
 `ALL_APPS` (`[...APPS, SYSTEM_INFO_APP]`), for `os:launch-app` to resolve
 an id against — otherwise clicking System Info in the menu would fire the
@@ -444,9 +445,40 @@ real. Both `williampp.jpg` and `two-hearts.png` are resolved in
 in static HTML resolves against the *page's* URL once that HTML is
 injected, not this folder's.
 
+## Calculator
+
+`apps/calculator/` is a standard (non-scientific) calculator — chained
+left-to-right evaluation like real Standard-mode calculators (`2 + 3 × 4`
+→ `20`, not `14` — precedence/parentheses are a scientific-mode feature,
+out of scope here), not an expression parser. All state (the current
+entry, the pending operator, the running total) lives in `index.js`'s
+closure — reset for free each time the app opens, since loader.js gives
+every instance a fresh module scope, nothing to reset by hand.
+
+- Floating-point noise (`0.1 + 0.2` → `0.30000000000000004`) is rounded
+  away for *display* only (`formatNumber()`, `toPrecision(12)`) — every
+  calculation itself works off the raw, unrounded number
+  (`previousValue`), so display rounding never compounds across a chain
+  of operations. The rounded string is also what gets re-parsed for
+  further chaining, though — deliberately: showing hidden extra precision
+  the user can't see would be its own kind of surprising.
+- **%** matches Windows Calculator's Standard mode, not the flatter "just
+  divide by 100" a simpler calculator might do: with a pending operator,
+  `%` computes a percentage *of* the running total (`200 + 10%` → 10% of
+  `200` → `20`, then `200 + 20`), not of the raw entry.
+- Divide-by-zero and overflow (a result too large to show as a plain
+  decimal) both land in the same `Error` state — `AC` is the only way
+  out, same lockout a real calculator has.
+- No number-key keyboard shortcuts, on purpose: real `<button>` elements
+  already give correct keyboard accessibility for free (Tab, then
+  Enter/Space activates one) — the actual requirement — and 0-9/+/Enter
+  shortcuts would need a document-level listener scoped to "this window
+  is the focused one" and torn down on close, machinery no other app here
+  has, for a convenience feature rather than an accessibility one.
+
 ## Adding a new app later
 
-1. Duplicate `apps/hello-world/` → `apps/your-app/`.
+1. Duplicate an existing app folder, e.g. `apps/calculator/` → `apps/your-app/`.
 2. Build it — it's just a normal self-contained HTML/CSS/JS page fragment.
 3. Add one line to the `APPS` array at the top of `js/main.js`:
    ```js
@@ -474,12 +506,6 @@ behavior, not a bug. There's no back/forward, only Home/Reload — once the
 iframe has navigated to a different (cross-origin) site, the page
 genuinely can't read or drive its history from out here, so those
 buttons would just be fake.
-
-Its icon/name come from `js/browser-icon.js`, which sniffs
-`navigator.userAgent` at boot and picks the closest emoji to whatever
-browser is actually running it (Firefox's fox, Safari's compass, ...)
-rather than a generic globe for everyone — cosmetic only, nothing else
-depends on the detection being exact.
 
 ## Running it
 
