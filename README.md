@@ -471,6 +471,14 @@ there's enough tab-specific behavior to justify one.
   `"AppName - 1"`, `"AppName - 2"`, etc.; clicking one focuses/restores
   that specific window. A single-window tab skips the dropdown entirely
   and just toggles that one window, same as before grouping existed.
+  Each row also has its own `✕` — a sibling button next to the row's
+  label, not nested inside it (a `<button>` can't contain another one),
+  same split `apps/file-explorer`'s removable rows already use. It
+  dispatches the exact `popup:closed` event that window's own titlebar
+  ✕ would, so closing from here isn't a separate code path — it's
+  indistinguishable from closing the window itself. Closing down to one
+  remaining window closes the dropdown too, back to the plain
+  single-tab case rather than showing a pointless one-item list.
 - **Drag left/right to reorder** — Pointer Events, the same
   drag-threshold-before-it-counts-as-a-drag pattern `widget/app-grid`
   uses for icons. Unlike the grid, the reorder itself doesn't happen live

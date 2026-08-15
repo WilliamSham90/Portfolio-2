@@ -401,7 +401,18 @@ body {
   display: none;
 }
 
+/* one row per window — the item (focus/restore) and the close button are
+   siblings, not nested (a button can't nest another button), same reason
+   apps/file-explorer splits .explorer-row/.explorer-row-main/-remove */
+.taskbar-group-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .taskbar-group-item {
+  flex: 1;
+  min-width: 0;
   padding: 8px 10px;
   border: none;
   border-radius: calc(var(--radius) - 2px);
@@ -424,6 +435,27 @@ body {
 }
 .taskbar-group-item.is-minimized {
   opacity: 0.6;
+}
+
+.taskbar-group-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text);
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 11px;
+}
+.taskbar-group-close:hover,
+.taskbar-group-close:focus-visible {
+  opacity: 1;
+  background: rgba(255,80,80,0.28);
+  outline: none;
 }
 
 /* ---------- RIGHT-CLICK MENU (context-menu.js) ---------- */

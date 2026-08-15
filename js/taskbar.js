@@ -110,7 +110,13 @@ export function registerWindow(app, root) {
       updateScrollArrows();
     } else {
       renderTabState(group);
-      if (openGroup === group) renderGroupMenu(group);
+      if (openGroup === group) {
+        // down to one window — that's back to the single-tab, no-dropdown
+        // case everywhere else in this module, so the dropdown has
+        // nothing left to list
+        if (group.roots.length > 1) renderGroupMenu(group);
+        else closeGroupMenu();
+      }
     }
   }, { once: true });
 }
@@ -174,12 +180,14 @@ function openGroupMenu(group) {
 function renderGroupMenu(group) {
   groupMenuEl.innerHTML = '';
   group.roots.forEach((root, i) => {
+    const label = `${group.app.name} - ${i + 1}`;
+
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'taskbar-group-item';
     if (root === activeRoot) item.classList.add('is-active');
     if (windows.get(root)?.minimized) item.classList.add('is-minimized');
-    item.textContent = `${group.app.name} - ${i + 1}`;
+    item.textContent = label;
     item.addEventListener('click', () => {
       if (windows.get(root)?.minimized || root === activeRoot) {
         root.dispatchEvent(new CustomEvent('popup:toggle-minimize'));
@@ -188,7 +196,24 @@ function renderGroupMenu(group) {
       }
       closeGroupMenu();
     });
-    groupMenuEl.appendChild(item);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'taskbar-group-close';
+    closeBtn.setAttribute('aria-label', `Close ${label}`);
+    closeBtn.textContent = '✕';
+    // same event widget/popup/index.js's own close button dispatches on
+    // this exact root — closing from here is otherwise indistinguishable
+    // from closing the window itself (registerWindow's own popup:closed
+    // listener, below, is what actually tidies up the tab/dropdown after)
+    closeBtn.addEventListener('click', () => {
+      root.dispatchEvent(new CustomEvent('popup:closed', { bubbles: false }));
+    });
+
+    const row = document.createElement('div');
+    row.className = 'taskbar-group-row';
+    row.append(item, closeBtn);
+    groupMenuEl.appendChild(row);
   });
 }
 
