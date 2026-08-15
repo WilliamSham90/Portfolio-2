@@ -213,7 +213,7 @@ body {
   background: var(--glass-border);
 }
 
-/* clock-panel.js's taskbar button + the "..." system-info button beside it */
+/* clock-panel.js's taskbar button */
 .taskbar-clock-button {
   flex-shrink: 0;
   display: flex;
@@ -245,7 +245,16 @@ body {
   outline: none;
 }
 
-/* one button per open window, appended/removed by main.js */
+/* taskbar.js: the whole open-window strip, arrows included */
+.taskbar-tabs-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* one button per open *app* (grouped, not per window — see taskbar.js) */
 #taskbar-tabs {
   flex: 1;
   min-width: 0;
@@ -253,41 +262,142 @@ body {
   align-items: center;
   gap: 8px;
   overflow-x: auto;
+  scroll-behavior: smooth;
   scrollbar-width: none;
 }
 #taskbar-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.taskbar-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* click/tap alternative to the native scroll above, shown only once the
+   strip actually overflows (see updateScrollArrows() in taskbar.js) */
+.taskbar-scroll {
   flex-shrink: 0;
+  width: 18px;
   height: 32px;
-  padding: 0 12px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.taskbar-scroll:hover,
+.taskbar-scroll:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+.taskbar-scroll[hidden] {
+  display: none;
+}
+
+.taskbar-tab {
+  position: relative; /* positions .taskbar-tab-count */
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   background: var(--glass);
-  color: var(--text-soft);
-  font: var(--fs-sm) var(--font-mono);
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  white-space: nowrap;
+  cursor: grab;
+  touch-action: none; /* dragging to reorder on mobile shouldn't also scroll the strip */
 }
 .taskbar-tab:hover,
 .taskbar-tab:focus-visible {
-  color: var(--text);
+  filter: brightness(1.15);
   outline: none;
+}
+.taskbar-tab.is-dragging {
+  cursor: grabbing;
+  z-index: 2; /* rides visually above its neighbors while it follows the pointer */
 }
 .taskbar-tab.is-minimized {
   opacity: 0.55;
 }
+.taskbar-tab.is-active {
+  border-color: var(--pearl);
+  background: linear-gradient(90deg, rgba(var(--hotrose-rgb),0.4), rgba(var(--aqua-rgb),0.3));
+}
 .taskbar-tab-icon-img {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
-  flex-shrink: 0;
+}
+.taskbar-tab-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* how many windows this app has open — hidden for the common case of one */
+.taskbar-tab-count {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  min-width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--hotrose);
+  color: var(--paper);
+  font: 9px var(--font-mono);
+  line-height: 14px;
+  text-align: center;
+}
+.taskbar-tab-count[hidden] {
+  display: none;
+}
+
+/* ---------- TASKBAR GROUP DROPDOWN (taskbar.js) ----------
+   Lists each open window of a tab with more than one — "Calculator - 1",
+   "Calculator - 2", etc. Same glass-panel look as .context-menu/.start-menu,
+   positioned the same "hug the taskbar" way as .start-menu. */
+.taskbar-group-menu {
+  position: fixed;
+  z-index: 1000;
+  bottom: calc(var(--taskbar-height) + 8px);
+  min-width: 190px; /* matches the menuWidth clamp estimate in taskbar.js */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+}
+.taskbar-group-menu[hidden] {
+  display: none;
+}
+
+.taskbar-group-item {
+  padding: 8px 10px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: var(--fs-sm) var(--font-mono);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.taskbar-group-item:hover,
+.taskbar-group-item:focus-visible {
+  background: rgba(255,255,255,0.2);
+  outline: none;
+}
+.taskbar-group-item.is-active {
+  color: var(--pearl);
+  font-weight: 700;
+}
+.taskbar-group-item.is-minimized {
+  opacity: 0.6;
 }
 
 /* ---------- RIGHT-CLICK MENU (context-menu.js) ---------- */
@@ -408,11 +518,6 @@ body {
   width: 16px;
   height: 16px;
   object-fit: contain;
-}
-.taskbar-tab.is-active {
-  color: var(--text);
-  border-color: var(--pearl);
-  background: linear-gradient(90deg, rgba(var(--hotrose-rgb),0.4), rgba(var(--aqua-rgb),0.3));
 }
 
 /* ---------- START MENU (start-menu.js) ---------- */

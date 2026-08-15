@@ -11,7 +11,7 @@ import { initContextMenu } from './context-menu.js';
 import { initStartMenu } from './start-menu.js';
 import { initPower } from './power.js';
 import { initClockPanel } from './clock-panel.js';
-import { isImageIcon } from './icon.js';
+import { initTaskbar, registerWindow } from './taskbar.js';
 
 function icon(filename) {
   return new URL(`../assets/system/Icons/basic/${filename}`, import.meta.url).href;
@@ -25,10 +25,10 @@ const SETTINGS_ICON = icon('settings.png');
 const COMPUTER_ICON = icon('computer-storage.png');
 
 export const APPS = [
-  { id: 'calculator', name: 'Calculator', icon: APP_ICON, path: './apps/calculator/' },
-  { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
+  { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
+  { id: 'calculator', name: 'Calculator', icon: APP_ICON, path: './apps/calculator/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -46,9 +46,6 @@ const ALL_APPS = [...APPS, SYSTEM_INFO_APP];
 const START_MENU_APPS = ['my-computer', 'browser', 'settings', 'system-info']
   .map((id) => ALL_APPS.find((a) => a.id === id));
 
-// tracks every currently-open window: popup root element -> its taskbar tab
-const openWindows = new Map();
-
 async function boot() {
   // 0. apply the saved (or default) theme before anything else mounts,
   //    so widgets never render with the wrong colors for a frame
@@ -56,6 +53,7 @@ async function boot() {
   initContextMenu();
   initPower();
   initStartMenu(START_MENU_APPS);
+  initTaskbar();
 
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');
@@ -76,21 +74,7 @@ async function boot() {
     if (app) openApp(app, [event.detail.id]);
   });
 
-  // 3. a popup tells us whenever it's been clicked/focused, so we can
-  //    highlight the matching taskbar tab
-  document.addEventListener('popup:activated', (event) => {
-    setActiveTab(event.target);
-  });
-
-  // ...and whenever it's been minimized/restored, so its tab can dim itself
-  document.addEventListener('popup:minimized', (event) => {
-    const tab = openWindows.get(event.target);
-    if (!tab) return;
-    tab.classList.toggle('is-minimized', event.detail.minimized);
-    if (event.detail.minimized) tab.classList.remove('is-active');
-  });
-
-  // 4. taskbar clock + its slide-in date/calendar panel
+  // 3. taskbar clock + its slide-in date/calendar panel
   initClockPanel();
 }
 
@@ -113,47 +97,11 @@ export async function openApp(app, appInitArgs = []) {
     initArgs: [app, offset, appInitArgs],
   });
 
-  const tab = createTaskbarTab(app, root);
-  openWindows.set(root, tab);
-  setActiveTab(root);
-
-  // if the user closes the window, clean up both its DOM node and its tab
-  root.addEventListener('popup:closed', () => {
-    root.remove();
-    tab.remove();
-    openWindows.delete(root);
-  }, { once: true });
-}
-
-function createTaskbarTab(app, popupRoot) {
-  const tabs = document.getElementById('taskbar-tabs');
-
-  const tab = document.createElement('button');
-  tab.type = 'button';
-  tab.className = 'taskbar-tab';
-  const iconHtml = isImageIcon(app.icon)
-    ? `<img class="taskbar-tab-icon taskbar-tab-icon-img icon-glow" src="${app.icon}" alt="" draggable="false">`
-    : `<span class="taskbar-tab-icon">${app.icon}</span>`;
-  tab.innerHTML = `${iconHtml}<span class="taskbar-tab-label">${app.name}</span>`;
-
-  // clicking the tab for a minimized (or already-active) window toggles it
-  // minimized/restored; otherwise it just brings that window to front
-  tab.addEventListener('click', () => {
-    if (tab.classList.contains('is-minimized') || tab.classList.contains('is-active')) {
-      popupRoot.dispatchEvent(new CustomEvent('popup:toggle-minimize'));
-    } else {
-      popupRoot.dispatchEvent(new CustomEvent('popup:focus'));
-    }
-  });
-
-  tabs.appendChild(tab);
-  return tab;
-}
-
-function setActiveTab(activeRoot) {
-  for (const [root, tab] of openWindows) {
-    tab.classList.toggle('is-active', root === activeRoot);
-  }
+  // taskbar.js owns everything about this window's taskbar presence from
+  // here on (grouping, highlighting, minimized state, closing) — see
+  // README.md > "Taskbar tabs"
+  registerWindow(app, root);
+  root.addEventListener('popup:closed', () => root.remove(), { once: true });
 }
 
 boot();

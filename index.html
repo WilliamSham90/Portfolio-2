@@ -32,8 +32,13 @@
         <img src="./assets/system/Icons/basic/home.png" alt="" draggable="false">
       </button>
       <div class="taskbar-divider" aria-hidden="true"></div>
-      <!-- main.js appends one .taskbar-tab button per open app here -->
-      <div id="taskbar-tabs"></div>
+      <!-- taskbar.js -->
+      <div class="taskbar-tabs-wrap">
+        <button type="button" class="taskbar-scroll taskbar-scroll-left" aria-label="Scroll tabs left" hidden>&lsaquo;</button>
+        <!-- one .taskbar-tab button per open app (not per window — see "Taskbar tabs") -->
+        <div id="taskbar-tabs"></div>
+        <button type="button" class="taskbar-scroll taskbar-scroll-right" aria-label="Scroll tabs right" hidden>&rsaquo;</button>
+      </div>
       <!-- clock-panel.js -->
       <button type="button" id="taskbar-clock-button" class="taskbar-clock-button" aria-haspopup="true">
         <span class="taskbar-clock-time"></span>
@@ -59,6 +64,9 @@
       </div>
     </div>
   </div>
+
+  <!-- taskbar.js's dropdown, listing each open window of a grouped app tab -->
+  <div id="taskbar-group-menu" class="taskbar-group-menu" hidden role="menu"></div>
 
   <!-- start-menu.js's dropdown -->
   <div id="start-menu" class="start-menu" hidden role="menu">

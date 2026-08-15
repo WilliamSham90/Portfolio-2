@@ -23,7 +23,8 @@ Portfolio/
 │   ├── icon-style.js             the "icon style kernel" — blue/yellow folder icons (see "Icons")
 │   ├── start-menu.js             the taskbar's Start button + its dropdown (see "Start menu")
 │   ├── power.js                  the shut-down/boot-up overlay (see "Start menu")
-│   └── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
+│   ├── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
+│   └── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -391,6 +392,52 @@ character into a `<pre>` (monospace, green-on-black, with a blinking-cursor
 exactly as it was, since nothing was actually torn down, the whole thing is
 just an overlay sitting on top.
 
+## Taskbar tabs
+
+`js/taskbar.js` owns the open-window strip between the Start button and
+the clock — main.js's `openApp()` calls its one entry point,
+`registerWindow(app, popupRoot)`, right after creating a window, and
+everything else (which tab that becomes, what clicking it does, closing
+it later) is this module's problem from there, reached back into a
+window only through the same events `widget/popup/index.js` already
+dispatches (`popup:focus`, `popup:toggle-minimize`) — no different from
+how main.js drove tabs before, just moved into its own module now that
+there's enough tab-specific behavior to justify one.
+
+- **One icon per app, not per window** — Windows-style grouping. A
+  second window of an app already open doesn't get a second tab; the
+  existing one grows a small count badge instead. The icon itself is the
+  only thing on the tab now (no name label anymore) — `title` **and**
+  `aria-label` both carry the app's name, since a hover tooltip alone
+  isn't reliably exposed to assistive tech (title's just for the visual
+  hover; aria-label is what actually satisfies the accessibility need).
+- **Grouped tabs open a dropdown instead of toggling directly** —
+  `.taskbar-group-menu` (same glass-panel styling, and the same
+  "hug the taskbar" positioning, as `.start-menu`) lists each window as
+  `"AppName - 1"`, `"AppName - 2"`, etc.; clicking one focuses/restores
+  that specific window. A single-window tab skips the dropdown entirely
+  and just toggles that one window, same as before grouping existed.
+- **Drag left/right to reorder** — Pointer Events, the same
+  drag-threshold-before-it-counts-as-a-drag pattern `widget/app-grid`
+  uses for icons. Unlike the grid, the reorder itself doesn't happen live
+  as you drag over a neighbor — only the dragged tab moves (following the
+  pointer via `transform`) while dragging; on drop, the target index is
+  computed from where it landed among the *other* tabs' actual (static)
+  positions, and every tab that needs to shift animates into its new spot
+  at once via a multi-element FLIP (capture every tab's rect, reorder the
+  DOM, animate each one's leftover delta to zero) — simpler than shifting
+  neighbors live during the drag, and still reads as one smooth motion.
+- **`‹`/`›` arrows for overflow** — `#taskbar-tabs` still scrolls
+  natively (wheel/trackpad keeps working exactly as before), but once it
+  actually overflows, arrows appear on each side a click/tap can use
+  instead, each paging by 80% of the visible strip width. A
+  `ResizeObserver` on the strip (not a plain `window.resize` listener)
+  is what keeps the arrows' visibility in sync — deliberately, since
+  what changes the strip's available width isn't only the browser window
+  resizing; the clock's own date text growing by a character, say,
+  shrinks `.taskbar-tabs-wrap` too, and a `window.resize` listener
+  would miss that entirely.
+
 ## Taskbar clock
 
 `#taskbar-clock-button` (`js/clock-panel.js`) is the taskbar's right edge —
@@ -565,7 +612,7 @@ command line) is the standard way — but it's optional, not required.
   stays readable regardless of what's behind it in a way a single fixed
   text color can't promise for every theme (current or future).
 
-## Windows: dragging, resizing, minimize/maximize + taskbar tabs
+## Windows: dragging, resizing, minimize/maximize
 
 - `widget/popup/index.js` makes each window's titlebar draggable with
   Pointer Events. While dragging it moves via a CSS `transform` (cheap
@@ -606,10 +653,10 @@ command line) is the standard way — but it's optional, not required.
   columns) already reflow on their own as the window changes size —
   resizing didn't need those apps to change at all.
 - Clicking anywhere on a window (or its taskbar tab) raises its z-index
-  above every other window and fires a `popup:activated` event.
-- `js/main.js` listens for that event and keeps one `.taskbar-tab` button
-  in `#taskbar-tabs` per open window, highlighting whichever one is
-  active and removing the tab automatically when that window is closed.
+  above every other window and fires a `popup:activated` event —
+  `js/taskbar.js` listens for that to highlight the right tab (see
+  "Taskbar tabs" below for how that module owns everything about a
+  window's taskbar presence, not just this).
 - **Maximize** (titlebar button, or double-click the titlebar) fills the
   desktop area — `#popup-layer`, i.e. up to the taskbar — via a CSS class
   (`.is-maximized`), *not* the browser's real Fullscreen API. That's on
@@ -621,10 +668,11 @@ command line) is the standard way — but it's optional, not required.
   whatever position *and* size — including one from a manual resize — the
   window had before.
 - **Minimize** (titlebar button) just hides the window (`.is-minimized`)
-  and dims its taskbar tab. Clicking that tab again restores it; clicking
-  the tab of the window that's already active minimizes it instead — the
-  same toggle either way, `popup:toggle-minimize`, decided by
-  `js/main.js`'s tab click handler based on the tab's current classes.
+  and, once every window an app tab represents is minimized, dims that
+  tab too. Clicking that tab again restores it; clicking the tab of the
+  window that's already active minimizes it instead — the same toggle
+  either way, `popup:toggle-minimize`, decided by `js/taskbar.js`'s tab
+  click handler.
 - **`pointer-events` lives on `.popup-window`, not on `#popup-layer`'s
   children generally.** loader.js's per-widget wrapper (`.widget-instance`)
   is sized to fill the *entire* desktop, even though the actual visible
