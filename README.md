@@ -492,18 +492,37 @@ there's enough tab-specific behavior to justify one.
   hover; aria-label is what actually satisfies the accessibility need).
 - **Grouped tabs open a dropdown instead of toggling directly** —
   `.taskbar-group-menu` (same glass-panel styling, and the same
-  "hug the taskbar" positioning, as `.start-menu`) lists each window as
-  `"AppName - 1"`, `"AppName - 2"`, etc.; clicking one focuses/restores
-  that specific window. A single-window tab skips the dropdown entirely
-  and just toggles that one window, same as before grouping existed.
-  Each row also has its own `✕` — a sibling button next to the row's
-  label, not nested inside it (a `<button>` can't contain another one),
-  same split `apps/file-explorer`'s removable rows already use. It
-  dispatches the exact `popup:closed` event that window's own titlebar
-  ✕ would, so closing from here isn't a separate code path — it's
-  indistinguishable from closing the window itself. Closing down to one
-  remaining window closes the dropdown too, back to the plain
-  single-tab case rather than showing a pointless one-item list.
+  "hug the taskbar" positioning, as `.start-menu`) lists each window,
+  clicking one focuses/restores that specific window. A single-window tab
+  skips the dropdown entirely and just toggles that one window, same as
+  before grouping existed. Each row also has its own `✕` — a sibling
+  button next to the row's label, not nested inside it (a `<button>`
+  can't contain another one), same split `apps/file-explorer`'s removable
+  rows already use. It dispatches the exact `popup:closed` event that
+  window's own titlebar ✕ would, so closing from here isn't a separate
+  code path — it's indistinguishable from closing the window itself.
+  Closing down to one remaining window closes the dropdown too, back to
+  the plain single-tab case rather than showing a pointless one-item list.
+- **A row's label isn't always just `"AppName - N"`** — an app can say
+  what its own window should be called there instead, by dispatching
+  `popup:label-changed` (`{ detail: { label } }`, bubbling) on its own
+  outer window element (`container.closest('.popup-window')?.parentElement`
+  from inside the app, the same "reach up to the chrome" trick
+  `apps/media-viewer` already uses for its own title). `apps/file-explorer`
+  is the one app that does, with its currently-open folder/category/album
+  name (`null` at the plain "This PC" root, which falls back to "My
+  Computer" same as before). `renderGroupMenu()` only numbers windows that
+  land on the *same* label — three File Explorer windows on three
+  different folders show three plain folder names, no numbers, while two
+  windows both on "Homework" still disambiguate as `"Homework - 1"` /
+  `"Homework - 2"`. One race worth knowing about: an app's very first
+  render (and so its first label) can happen *before* `registerWindow()`
+  has run for that window — its own `init()` finishes, and can render,
+  before the outer `loadWidget()` call awaiting it returns to `main.js`,
+  which is what calls `registerWindow()`. An early label isn't lost: it's
+  stashed in `pendingLabels` (keyed by the window element itself, the
+  only handle available before it's a registered root) and claimed the
+  moment `registerWindow()` actually runs for that window.
 - **Drag left/right to reorder** — Pointer Events, the same
   drag-threshold-before-it-counts-as-a-drag pattern `widget/app-grid`
   uses for icons. Unlike the grid, the reorder itself doesn't happen live
@@ -657,6 +676,14 @@ deliberately doesn't take on.
   dirty (reaching up via `container.closest('.popup-window')`, same
   trick `apps/media-viewer` already uses to rename its own title) are
   both small, understated cues, not a blocking warning banner.
+- **The toolbar Save button confirms before it downloads anything** —
+  triggering a file save onto someone's real computer isn't something to
+  do on a single click with no warning, so it asks first
+  (`js/confirm-dialog.js` again, "Save"/"Cancel" this time). The
+  `beforeClose` prompt below doesn't get a second confirmation stacked on
+  top of this one, though: choosing "Save" *there* already is the
+  deliberate choice this dialog exists to check for, so its own `save()`
+  call skips straight to the actual download.
 - **Closing with unsaved changes prompts first** — `init()` returns
   `{ beforeClose }`, which `widget/popup/index.js` awaits before actually
   closing the window (see "How opening an app actually happens", step

@@ -68,7 +68,17 @@ export function init(container, note) {
   }
 
   textEl.addEventListener('input', () => setStatus(true));
-  saveBtn.addEventListener('click', save);
+  saveBtn.addEventListener('click', async () => {
+    // confirms before the toolbar button downloads anything — the
+    // beforeClose prompt below doesn't need this same confirmation on top
+    // of its own, since choosing "Save" there already *is* the deliberate
+    // choice this dialog exists to check for
+    const proceed = await confirmDialog(`Save this note as "${fileName}" to your computer?`, {
+      confirmLabel: 'Save',
+      cancelLabel: 'Cancel',
+    });
+    if (proceed) save();
+  });
 
   return {
     async beforeClose() {

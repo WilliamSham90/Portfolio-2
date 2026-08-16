@@ -29,6 +29,11 @@ export function init(container, folderId) {
   const titleEl = container.querySelector('.explorer-main-title');
   const listEl = container.querySelector('.explorer-list');
   const viewToggleEl = container.querySelector('.explorer-view-toggle');
+  // the window this instance lives inside — same "reach up to the chrome"
+  // trick apps/media-viewer uses for its own title, used here to tell
+  // taskbar.js what to show for this window in a grouped tab's dropdown
+  // (see js/taskbar.js) instead of a generic "My Computer - N"
+  const outerRoot = container.closest('.popup-window')?.parentElement;
 
   // { type: 'folder', id } | { type: 'category', key } | { type: 'album', catKey, albumId } | null
   let selected = folderId ? { type: 'folder', id: folderId } : null;
@@ -55,6 +60,17 @@ export function init(container, folderId) {
   function render() {
     renderSidebar();
     renderMain();
+  }
+
+  /** Sets the pane title, and tells taskbar.js what to show for this
+   *  window in a grouped tab's dropdown instead — "This PC" (null) falls
+   *  back to the app's own name there, same as it always did. */
+  function setTitle(text) {
+    titleEl.textContent = text;
+    outerRoot?.dispatchEvent(new CustomEvent('popup:label-changed', {
+      detail: { label: text === 'This PC' ? null : text },
+      bubbles: true,
+    }));
   }
 
   function renderSidebar() {
@@ -94,14 +110,14 @@ export function init(container, folderId) {
     if (selected?.type === 'folder' && !getFolder(selected.id)) selected = null; // folder got deleted/emptied elsewhere
 
     if (!selected) {
-      titleEl.textContent = 'This PC';
+      setTitle('This PC');
       listEl.appendChild(emptyHint('Select a folder or a library category on the left.'));
       return;
     }
 
     if (selected.type === 'folder') {
       const folder = getFolder(selected.id);
-      titleEl.textContent = folder.name;
+      setTitle(folder.name);
       renderFolder(folder);
       return;
     }
@@ -110,13 +126,13 @@ export function init(container, folderId) {
       const cat = CATEGORIES.find((c) => c.key === selected.catKey);
       const album = (manifest[selected.catKey] ?? []).find((e) => e.id === selected.albumId);
       if (!cat || !album) { selected = { type: 'category', key: selected.catKey }; renderMain(); return; }
-      titleEl.textContent = album.name;
+      setTitle(album.name);
       renderFiles(cat, album.items);
       return;
     }
 
     const cat = CATEGORIES.find((c) => c.key === selected.key);
-    titleEl.textContent = cat.name;
+    setTitle(cat.name);
     renderCategory(cat);
   }
 

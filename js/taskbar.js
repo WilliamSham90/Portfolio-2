@@ -14,7 +14,11 @@
    - **Grouping**: more than one window open for the same app shows a
      small count badge; clicking the icon opens a dropdown listing each
      window ("Calculator - 1", "Calculator - 2", ...) instead of
-     toggling a single window directly.
+     toggling a single window directly. An app can override what its own
+     window is called there — a File Explorer window showing a specific
+     folder does, via `popup:label-changed` (see registerWindow and
+     renderGroupMenu below) — falling back to the plain "AppName - N"
+     numbering only among windows that don't have (or share) a label.
    - **Reordering**: dragging a tab left/right (Pointer Events, same
      drag-threshold pattern as widget/app-grid) reorders `order`; the
      actual DOM move happens once, on drop, animated with FLIP rather
@@ -34,9 +38,16 @@ const DRAG_THRESHOLD = 6;
 
 let tabsEl, scrollLeftBtn, scrollRightBtn, groupMenuEl;
 
-const windows = new Map(); // popupRoot -> { app, minimized }
+const windows = new Map(); // popupRoot -> { app, minimized, locationLabel }
 const groups = new Map(); // app.id -> { app, roots: [popupRoot,...], tabButton, countEl }
 let order = []; // app ids, left-to-right display order
+
+// a popup:label-changed can arrive (see apps/file-explorer's very first
+// render) before registerWindow has run for that root — an app's own
+// init() finishes, and can render, before the *outer* loadWidget() call
+// that awaits it returns to main.js, which is what calls registerWindow.
+// Stashed here until registerWindow claims it, rather than silently lost.
+const pendingLabels = new Map(); // popupRoot -> label
 
 let activeRoot = null;
 let openGroup = null; // the group whose dropdown is currently open, if any
@@ -73,6 +84,21 @@ export function initTaskbar() {
     if (openGroup === group) renderGroupMenu(group); // keep the open dropdown's active row in sync
   });
 
+  // an app (currently just apps/file-explorer) telling us what to call
+  // its window in a grouped tab's dropdown instead of the generic
+  // "AppName - N" — see renderGroupMenu()
+  document.addEventListener('popup:label-changed', (event) => {
+    const label = event.detail.label || null;
+    const info = windows.get(event.target);
+    if (!info) {
+      pendingLabels.set(event.target, label); // registerWindow hasn't run yet — see the comment on pendingLabels above
+      return;
+    }
+    info.locationLabel = label;
+    const group = groups.get(info.app.id);
+    if (group && openGroup === group) renderGroupMenu(group);
+  });
+
   document.addEventListener('pointerdown', (event) => {
     if (openGroup && !groupMenuEl.contains(event.target) && !openGroup.tabButton.contains(event.target)) {
       closeGroupMenu();
@@ -85,7 +111,8 @@ export function initTaskbar() {
 
 /** Called by main.js's openApp() right after a window is created. */
 export function registerWindow(app, root) {
-  windows.set(root, { app, minimized: false });
+  windows.set(root, { app, minimized: false, locationLabel: pendingLabels.get(root) ?? null });
+  pendingLabels.delete(root);
 
   let group = groups.get(app.id);
   if (!group) {
@@ -179,8 +206,26 @@ function openGroupMenu(group) {
 
 function renderGroupMenu(group) {
   groupMenuEl.innerHTML = '';
+
+  // each window's own label (a File Explorer window's current folder, say)
+  // if it has one, else the app's name — numbered ("- 1", "- 2") only
+  // among windows that land on the *same* label, not the group as a whole,
+  // so three File Explorer windows on three different folders show three
+  // plain folder names, no numbers, while two on the same folder still
+  // disambiguate as "Folder - 1"/"Folder - 2"
+  const baseLabels = group.roots.map((root) => windows.get(root)?.locationLabel || group.app.name);
+  const countByLabel = new Map();
+  for (const base of baseLabels) countByLabel.set(base, (countByLabel.get(base) || 0) + 1);
+  const seenByLabel = new Map();
+
   group.roots.forEach((root, i) => {
-    const label = `${group.app.name} - ${i + 1}`;
+    const base = baseLabels[i];
+    let label = base;
+    if (countByLabel.get(base) > 1) {
+      const n = (seenByLabel.get(base) || 0) + 1;
+      seenByLabel.set(base, n);
+      label = `${base} - ${n}`;
+    }
 
     const item = document.createElement('button');
     item.type = 'button';
