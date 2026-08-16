@@ -1,4 +1,5 @@
 import { loadWidget } from '../../js/loader.js';
+import { isImageIcon } from '../../js/icon.js';
 
 // shared across every popup instance (this module is a singleton),
 // so "bring to front" just means "give it a higher number than anyone else"
@@ -44,6 +45,12 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   win.style.top = `${clamp(openTop / 2 + offset, 0, openTop)}px`;
 
   win.querySelector('.popup-title').textContent = app.name;
+  const iconEl = win.querySelector('.popup-icon');
+  if (isImageIcon(app.icon)) {
+    iconEl.innerHTML = `<img class="popup-icon-img" src="${app.icon}" alt="" draggable="false">`;
+  } else {
+    iconEl.textContent = app.icon;
+  }
 
   win.querySelector('.popup-close').addEventListener('click', () => {
     container.dispatchEvent(new CustomEvent('popup:closed', { bubbles: false }));

@@ -96,6 +96,14 @@
     </div>
   </div>
 
+  <!-- clock-panel.js's click-to-reveal description for a holiday/birthday
+       day — a sibling of #clock-panel, not nested inside it: that element
+       gets a CSS transform for its slide animation, which would otherwise
+       become this popup's containing block and break its fixed positioning -->
+  <div id="clock-panel-day-popup" class="clock-panel-day-popup" hidden role="dialog">
+    <p class="clock-panel-day-popup-text"></p>
+  </div>
+
   <!-- power.js's shut-down/boot-up overlay -->
   <div id="power-overlay" class="power-overlay" hidden>
     <button type="button" class="power-on-button" aria-label="Power on" hidden>

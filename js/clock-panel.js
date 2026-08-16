@@ -30,6 +30,33 @@ export function initClockPanel() {
   const panelDate = panel.querySelector('.clock-panel-date');
   const prevButton = panel.querySelector('.clock-panel-cal-prev');
   const nextButton = panel.querySelector('.clock-panel-cal-next');
+  const gridEl = panel.querySelector('.clock-panel-cal-grid');
+
+  // deliberately NOT nested inside #clock-panel: that element gets a CSS
+  // transform for its slide animation, and a transformed ancestor becomes
+  // the containing block for any position:fixed descendant — which would
+  // silently break this popup's own viewport-relative left/bottom math
+  // the moment the panel was mid-animation. A sibling in index.html sidesteps that.
+  const dayPopup = document.getElementById('clock-panel-day-popup');
+  const dayPopupText = dayPopup.querySelector('.clock-panel-day-popup-text');
+  let openDayCell = null;
+
+  const showDayPopup = (cell, description) => {
+    dayPopupText.textContent = description;
+    const r = cell.getBoundingClientRect();
+    const popupWidth = 200; // matches .clock-panel-day-popup's fixed width in css/main.css
+    dayPopup.style.left = `${clamp(r.left + r.width / 2 - popupWidth / 2, 8, window.innerWidth - popupWidth - 8)}px`;
+    dayPopup.style.bottom = `${window.innerHeight - r.top + 8}px`;
+    dayPopup.hidden = false;
+    openDayCell = cell;
+    cell.classList.add('is-popped');
+  };
+
+  const closeDayPopup = () => {
+    dayPopup.hidden = true;
+    if (openDayCell) openDayCell.classList.remove('is-popped');
+    openDayCell = null;
+  };
 
   const tick = () => {
     const now = new Date();
@@ -48,15 +75,21 @@ export function initClockPanel() {
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth();
 
-  const renderView = () => renderCalendar(panel, viewYear, viewMonth, today);
+  const toggleDayPopup = (cell, description) => {
+    if (openDayCell === cell) closeDayPopup(); else showDayPopup(cell, description);
+  };
+
+  const renderView = () => renderCalendar(gridEl, panel, viewYear, viewMonth, today, toggleDayPopup);
   renderView();
 
   prevButton.addEventListener('click', () => {
+    closeDayPopup(); // the cell it's anchored to is about to be replaced
     viewMonth -= 1;
     if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
     renderView();
   });
   nextButton.addEventListener('click', () => {
+    closeDayPopup();
     viewMonth += 1;
     if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
     renderView();
@@ -73,6 +106,7 @@ export function initClockPanel() {
   };
 
   const hide = () => {
+    closeDayPopup();
     panel.classList.remove('is-open');
     button.classList.remove('is-active');
     clearTimeout(hideTimer);
@@ -84,16 +118,25 @@ export function initClockPanel() {
     if (panel.hidden || !panel.classList.contains('is-open')) show(); else hide();
   });
   document.addEventListener('pointerdown', (event) => {
+    if (openDayCell && !dayPopup.contains(event.target) && event.target !== openDayCell) closeDayPopup();
     if (panel.classList.contains('is-open') && !panel.contains(event.target) && event.target !== button) hide();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') hide();
+    if (event.key !== 'Escape') return;
+    if (openDayCell) closeDayPopup(); else hide();
   });
 }
 
-function renderCalendar(panel, year, month, today) {
+/**
+ * @param {HTMLElement} gridEl
+ * @param {HTMLElement} panel
+ * @param {(cell: HTMLElement, description: string) => void} onDayClick
+ *   called when a holiday/birthday cell (the only interactive ones) is
+ *   clicked — a plain day has nothing to click through to, so it's
+ *   rendered as an inert <span>, not a <button> with nothing to do
+ */
+function renderCalendar(gridEl, panel, year, month, today, onDayClick) {
   const monthEl = panel.querySelector('.clock-panel-cal-month');
-  const gridEl = panel.querySelector('.clock-panel-cal-grid');
 
   monthEl.textContent = `${MONTHS[month]} ${year}`;
 
@@ -114,12 +157,22 @@ function renderCalendar(panel, year, month, today) {
     if (holidayName) classes.push('is-holiday');
     if (isBirthday) classes.push('is-birthday');
 
-    const titles = [holidayName, isBirthday ? BIRTHDAY.label : null].filter(Boolean);
-    const title = titles.length ? ` title="${titles.join(' · ')}"` : '';
+    const description = [holidayName, isBirthday ? BIRTHDAY.label : null].filter(Boolean).join(' · ');
 
-    cells.push(`<span class="${classes.join(' ')}"${title}>${day}</span>`);
+    if (description) {
+      // a click-to-reveal popup (see showDayPopup), not a title tooltip —
+      // a tooltip over a cell this small turned out to be easy to miss
+      // and fiddly to trigger on a real click/tap
+      cells.push(`<button type="button" class="${classes.join(' ')}" data-description="${description}" aria-label="${day} — ${description}">${day}</button>`);
+    } else {
+      cells.push(`<span class="${classes.join(' ')}">${day}</span>`);
+    }
   }
   gridEl.innerHTML = cells.join('');
+
+  gridEl.querySelectorAll('.clock-panel-cal-day[data-description]').forEach((cell) => {
+    cell.addEventListener('click', () => onDayClick(cell, cell.dataset.description));
+  });
 }
 
 /**
@@ -191,4 +244,8 @@ function addDays(date, n) {
 
 function dateKey(year, month, day) {
   return `${year}-${month}-${day}`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }

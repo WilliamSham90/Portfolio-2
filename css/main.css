@@ -821,24 +821,31 @@ body {
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  border: none;
   border-radius: 50%;
+  background: transparent;
+  padding: 0;
   font: var(--fs-xs) var(--font-mono);
   color: var(--text);
+  /* most day cells are a plain <span> (nothing to click) — these resets
+     only matter for the few rendered as <button> instead (see
+     renderCalendar()/is-holiday/is-birthday below), harmless on a <span> */
 }
 /* a ring rather than a fill — so a holiday that's also today (is-today's
    own solid fill, below) still reads as both at once instead of one hiding
-   the other; the name itself is a native title-attribute tooltip, see
-   clock-panel.js, not something that fits in a cell this small */
+   the other. Clicking it reveals the name in .clock-panel-day-popup — see
+   clock-panel.js — rather than a title tooltip, which turned out easy to
+   miss/fiddly to trigger on a cell this small. */
 .clock-panel-cal-day.is-holiday {
   box-shadow: inset 0 0 0 2px rgba(var(--aqua-rgb), 0.85);
-  cursor: default;
+  cursor: pointer;
 }
 /* a filled circle, same treatment as is-today but a different token, so a
    birthday reads at a glance without hunting for the ring holidays get */
 .clock-panel-cal-day.is-birthday {
   background: rgba(var(--lilac-rgb), 0.55);
   font-weight: 700;
-  cursor: default;
+  cursor: pointer;
 }
 /* declared last so it wins the tie (equal specificity) on the one day a
    year this could coincide with is-birthday above — "today" is the more
@@ -849,4 +856,38 @@ body {
 }
 .clock-panel-cal-day.is-empty {
   visibility: hidden;
+}
+/* the cell .clock-panel-day-popup is currently anchored to */
+.clock-panel-cal-day.is-popped {
+  outline: 2px solid var(--pearl);
+  outline-offset: 1px;
+}
+.clock-panel-cal-day:focus-visible {
+  outline: 2px solid var(--pearl);
+  outline-offset: 1px;
+}
+
+/* ---------- CLOCK PANEL DAY POPUP (clock-panel.js) ----------
+   Click-to-reveal description for a holiday/birthday day. Deliberately a
+   sibling of #clock-panel in index.html, not nested inside it — see the
+   comment on #clock-panel-day-popup there. */
+.clock-panel-day-popup {
+  position: fixed;
+  z-index: 1000;
+  width: 200px; /* fixed, not min/max — clock-panel.js's clamp math assumes this exact value */
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+}
+.clock-panel-day-popup[hidden] {
+  display: none;
+}
+.clock-panel-day-popup-text {
+  margin: 0;
+  font: var(--fs-sm) var(--font-mono);
+  color: var(--text);
+  line-height: 1.4;
 }

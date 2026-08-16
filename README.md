@@ -121,9 +121,12 @@ naming for this.
 3. `js/main.js` catches that event and loads a **fresh instance** of
    `widget/popup/` into `#popup-layer` (so you can have several windows
    open at once).
-4. `widget/popup/index.js` sets its own title/close button, then calls
-   `loadWidget()` again — this time on the app's own folder — to fetch
-   that app's `index.html`/`index.css`/`index.js` into the window's body.
+4. `widget/popup/index.js` sets its own title (and, next to it, the
+   app's own icon — `.popup-icon`, same `isImageIcon()` image-or-emoji
+   check `js/icon.js` centralizes for every other icon in this OS) and
+   close button, then calls `loadWidget()` again — this time on the app's
+   own folder — to fetch that app's `index.html`/`index.css`/`index.js`
+   into the window's body.
 
 ## Theming
 
@@ -539,15 +542,31 @@ right), plus the "falls on a Sunday → the following Monday is also a
 holiday" rule South African law adds on top. A holiday shows as a ring
 around that day (`.is-holiday`, `--aqua`) rather than a filled circle like
 `.is-today` (`--hotrose`) specifically so a day that's *both* still shows
-both instead of one hiding the other; the holiday's name is a native
-`title` tooltip — there's no room in a cell this small for real text.
-William's birthday (17 January, `BIRTHDAY` in `js/clock-panel.js`) gets
-the same "different color, no room for real text so it's a tooltip"
-treatment, but as a *filled* circle (`.is-birthday`, `--lilac`) rather
-than a ring, so it doesn't read as just another holiday — the one edge
-case where it could land on the same day as `.is-today` is resolved by
-CSS declaration order (`.is-today` declared last wins the tie), not
-JS, since "today" is the more useful thing to see at a glance.
+both instead of one hiding the other. William's birthday (17 January,
+`BIRTHDAY` in `js/clock-panel.js`) gets the same "different color" idea
+applied as a *filled* circle (`.is-birthday`, `--lilac`) rather than a
+ring, so it doesn't read as just another holiday — the one edge case
+where it could land on the same day as `.is-today` is resolved by CSS
+declaration order (`.is-today` declared last wins the tie), not JS, since
+"today" is the more useful thing to see at a glance.
+
+A holiday/birthday day's name isn't a `title` tooltip — hovering a cell
+this small turned out easy to miss and fiddly to trigger on a real click
+or tap, so only these cells render as a real `<button>` (a plain day is
+an inert `<span>`; nothing to click through to) and clicking one opens
+`#clock-panel-day-popup` with the description in it, positioned off the
+clicked cell's own `getBoundingClientRect()` and clamped so it can't run
+past either edge of the viewport. That element is a **sibling** of
+`#clock-panel` in `index.html`, deliberately not nested inside it: a CSS
+`transform` (which `#clock-panel` has, for its slide animation) turns the
+transformed element into the containing block for any `position: fixed`
+descendant, which would have silently broken this popup's own
+viewport-relative positioning the moment the panel was mid-animation.
+Navigating months, or closing the calendar panel itself, closes the day
+popup too (its anchor cell is either gone or about to be), and Escape
+closes just the day popup first if one's open, the whole panel on a
+second press — the same "innermost thing first" pattern most nested
+popups/modals use.
 
 ## System Info
 
