@@ -52,7 +52,15 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
     iconEl.textContent = app.icon;
   }
 
-  win.querySelector('.popup-close').addEventListener('click', () => {
+  // an app can veto/delay closing (Notepad's unsaved-changes prompt, say)
+  // by exporting an async beforeClose() that resolves false — set below,
+  // once the app's own module has actually loaded; null until then just
+  // means "nothing to ask", so a close click that somehow lands before
+  // that load finishes still closes immediately rather than erroring
+  let beforeClose = null;
+
+  win.querySelector('.popup-close').addEventListener('click', async () => {
+    if (beforeClose && !(await beforeClose())) return;
     container.dispatchEvent(new CustomEvent('popup:closed', { bubbles: false }));
   });
 
@@ -70,7 +78,8 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   makeMinimizable(win, container, win.querySelector('.popup-minimize'));
 
   // load the actual app (its own html/css/js) into this window's body
-  await loadWidget(app.path, body, { initArgs: appInitArgs });
+  const { initResult } = await loadWidget(app.path, body, { initArgs: appInitArgs });
+  if (initResult && typeof initResult.beforeClose === 'function') beforeClose = initResult.beforeClose;
 }
 
 function activate(win, container) {

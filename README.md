@@ -67,6 +67,10 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
+    ├── notepad/                 one always-there note, asks before closing unsaved (see "Notepad")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
     ├── themes/                 folder name unchanged, but this is now "Settings" —
     │   │                        theme + icon style (see "Theming" and "Icons")
     │   ├── index.html
@@ -127,6 +131,15 @@ naming for this.
    close button, then calls `loadWidget()` again — this time on the app's
    own folder — to fetch that app's `index.html`/`index.css`/`index.js`
    into the window's body.
+5. If that app's `init()` returns `{ beforeClose }`, the close button
+   awaits it before actually closing — the one way an app can step in
+   front of its own window closing (Notepad's unsaved-changes prompt is
+   the only one that does, see "Notepad"). This has to come back from
+   `init()` itself, not a plain export sitting next to it, since a module
+   is a singleton (one `apps/notepad/index.js` instance shared by every
+   window that ever opens it) but each window needs its *own* `dirty`
+   flag — `loadWidget()` (`js/loader.js`) passes `init()`'s return value
+   back up as `initResult` specifically so this can exist at all.
 
 ## Theming
 
@@ -612,6 +625,45 @@ every instance a fresh module scope, nothing to reset by hand.
   shortcuts would need a document-level listener scoped to "this window
   is the focused one" and torn down on close, machinery no other app here
   has, for a convenience feature rather than an accessibility one.
+
+## Notepad
+
+`apps/notepad/` is one always-there note, not a multi-file editor — "New"
+or "Open" would need a virtual filesystem this OS doesn't have (folders,
+`js/folders.js`, only ever hold *apps*, not documents), and that's real
+scope this app deliberately doesn't take on. There's exactly one saved
+note (`localStorage`, key `os-notepad`), the same one every time the app
+opens, edited in place.
+
+- **Explicit Save only, no autosave.** An edit is genuinely lost if you
+  close without saving, same as it would be in a real text editor — a
+  silent autosave is actually the *less* predictable choice for a plain
+  text field like this (nothing to conflict-resolve, no draft/version
+  history either, so "it saved something, but was it what I meant?" has
+  no undo). The toolbar's status text (`Saved` / `Unsaved changes`) and a
+  `•` appended to the window's own title while dirty (reaching up via
+  `container.closest('.popup-window')`, same trick `apps/media-viewer`
+  already uses to rename its own title) are both small, understated cues,
+  not a blocking warning banner.
+- **Closing with unsaved changes prompts first** — `init()` returns
+  `{ beforeClose }`, which `widget/popup/index.js` awaits before actually
+  closing the window (see "How opening an app actually happens", step
+  5). `beforeClose()` reuses `js/confirm-dialog.js` exactly as every
+  other confirmation in this OS does — "Save" saves then closes, "Don't
+  Save" (or dismissing the dialog entirely, same as clicking it) discards
+  and closes anyway. There's no third "cancel, keep editing" option: this
+  is a deliberately simple two-outcome prompt, not a three-button one,
+  matching `confirmDialog()`'s existing shape rather than extending it.
+- **`note.content`** (the second argument `init()` accepts) is a
+  placeholder for a real future feature — the File Explorer opening a
+  `.txt` file straight into this editor, the same way it already opens
+  images into `apps/media-viewer`. Nothing calls it with a value yet
+  (there's no `.txt` entry in `assets/manifest.js` to open from), but
+  accepting it now costs nothing and avoids a signature change later.
+- Resets with everything else: `os:reset` (the desktop's right-click
+  Reset) clears the saved note along with every other piece of persisted
+  state, same one-listener-per-owner pattern `js/folders.js`/`js/theme.js`
+  etc. all use.
 
 ## Adding a new app later
 

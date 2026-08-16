@@ -22,12 +22,14 @@ const BROWSER_ICON = icon('earth.png');
 const SETTINGS_ICON = icon('settings.png');
 const COMPUTER_ICON = icon('computer-storage.png');
 const CALCULATOR_ICON = icon('calculator.png');
+const NOTEPAD_ICON = icon('notes.png');
 
 export const APPS = [
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
   { id: 'settings', name: 'Settings', icon: SETTINGS_ICON, path: './apps/themes/' },
   { id: 'calculator', name: 'Calculator', icon: CALCULATOR_ICON, path: './apps/calculator/' },
+  { id: 'notepad', name: 'Notepad', icon: NOTEPAD_ICON, path: './apps/notepad/' },
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 

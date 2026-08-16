@@ -1,0 +1,63 @@
+@scope (.notepad-app) {
+  :scope {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* fills the window when maximized/resized — see the
+                     .widget-instance note in css/main.css; a no-op at the
+                     default content-sized window height */
+    min-width: 320px;
+    min-height: 260px;
+  }
+
+  .notepad-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 8px;
+    background: rgba(255,255,255,0.25);
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .notepad-save {
+    padding: 6px 16px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.4);
+    color: var(--win-text);
+    cursor: pointer;
+    font: var(--fs-sm) var(--font-mono);
+  }
+  .notepad-save:hover,
+  .notepad-save:focus-visible {
+    background: rgba(255,255,255,0.65);
+    outline: none;
+  }
+
+  .notepad-status {
+    font: var(--fs-xs) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.6;
+  }
+
+  .notepad-text {
+    flex: 1;
+    min-height: 220px; /* a reasonable floor at the default content-sized
+                           window height, since flex:1 alone has nothing
+                           to grow into there (see popup .popup-body) */
+    padding: 14px;
+    border: 0;
+    resize: none;
+    background: var(--win-bg);
+    color: var(--win-text);
+    font: var(--fs-base) var(--font-mono);
+    line-height: 1.5;
+  }
+  .notepad-text:focus-visible {
+    outline: none; /* the window itself already gets a focus/active treatment; a second ring on the textarea reads as a bug, not a feature */
+  }
+  .notepad-text::placeholder {
+    color: var(--win-text);
+    opacity: 0.4;
+  }
+}

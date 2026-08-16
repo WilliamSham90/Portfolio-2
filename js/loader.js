@@ -39,7 +39,7 @@ const styleReady = new Map();
  *                                      widgets you may want more than one
  *                                      instance of, like popup windows)
  * @param {any[]} [options.initArgs]    extra args passed to the module's init()
- * @returns {Promise<{module: any, root: HTMLElement}>}
+ * @returns {Promise<{module: any, root: HTMLElement, initResult: any}>}
  */
 export async function loadWidget(basePath, mountPoint, options = {}) {
   const { multiple = false, initArgs = [] } = options;
@@ -85,9 +85,12 @@ export async function loadWidget(basePath, mountPoint, options = {}) {
   }
 
   const mod = await import(new URL('index.js', base).href);
-  if (typeof mod.init === 'function') {
-    await mod.init(root, ...initArgs);
-  }
+  // whatever init() returns is handed straight back too — e.g.
+  // widget/popup uses this so an app can return a per-instance
+  // beforeClose() hook (Notepad's unsaved-changes prompt); it has to come
+  // from here, an init() return value, rather than a plain module export,
+  // since a module is a singleton but each popup gets its own init() call
+  const initResult = typeof mod.init === 'function' ? await mod.init(root, ...initArgs) : undefined;
 
-  return { module: mod, root };
+  return { module: mod, root, initResult };
 }
