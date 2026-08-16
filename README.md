@@ -628,42 +628,55 @@ every instance a fresh module scope, nothing to reset by hand.
 
 ## Notepad
 
-`apps/notepad/` is one always-there note, not a multi-file editor — "New"
-or "Open" would need a virtual filesystem this OS doesn't have (folders,
-`js/folders.js`, only ever hold *apps*, not documents), and that's real
-scope this app deliberately doesn't take on. There's exactly one saved
-note (`localStorage`, key `os-notepad`), the same one every time the app
-opens, edited in place.
+`apps/notepad/` opens blank every time — no `localStorage`, nothing
+remembered between openings, on purpose. "Save" doesn't persist anything
+*inside* this OS at all; it downloads the current text as a real `.txt`
+file to the visitor's own computer, the same as any other browser
+download. Not a multi-file editor either — "New"/"Open" would need a
+virtual filesystem this OS doesn't have (folders, `js/folders.js`, only
+ever hold *apps*, not documents) — that's real scope this app
+deliberately doesn't take on.
 
-- **Explicit Save only, no autosave.** An edit is genuinely lost if you
-  close without saving, same as it would be in a real text editor — a
-  silent autosave is actually the *less* predictable choice for a plain
-  text field like this (nothing to conflict-resolve, no draft/version
-  history either, so "it saved something, but was it what I meant?" has
-  no undo). The toolbar's status text (`Saved` / `Unsaved changes`) and a
-  `•` appended to the window's own title while dirty (reaching up via
-  `container.closest('.popup-window')`, same trick `apps/media-viewer`
-  already uses to rename its own title) are both small, understated cues,
-  not a blocking warning banner.
+- **The download itself**: a `Blob` (`text/plain;charset=utf-8`) turned
+  into an object URL, assigned to a temporary `<a download="note.txt">`,
+  clicked in JS, then `URL.revokeObjectURL()`'d a tick later rather than
+  immediately — belt and suspenders against a browser that's still
+  reading the blob URL right when it'd otherwise get pulled out from
+  under it. This is the universally-supported way to do this; the newer
+  File System Access API's `showSaveFilePicker()` would give a real
+  "Save As" dialog (and let a second Save overwrite the same file without
+  re-prompting), but neither Firefox nor Safari implement it at all, and
+  a portfolio site can't assume every visitor is on Chromium. There's
+  also no callback confirming a download actually finished (or that an
+  OS save dialog inside it wasn't cancelled) — this counts it as saved
+  the moment it's triggered, same as any other download button would.
+- **Explicit Save only, no autosave** — there's nothing to autosave *to*
+  here besides triggering a real download on every keystroke, which
+  would be its own kind of chaos. The toolbar's status text (`Saved` /
+  `Unsaved changes`) and a `•` appended to the window's own title while
+  dirty (reaching up via `container.closest('.popup-window')`, same
+  trick `apps/media-viewer` already uses to rename its own title) are
+  both small, understated cues, not a blocking warning banner.
 - **Closing with unsaved changes prompts first** — `init()` returns
   `{ beforeClose }`, which `widget/popup/index.js` awaits before actually
   closing the window (see "How opening an app actually happens", step
   5). `beforeClose()` reuses `js/confirm-dialog.js` exactly as every
-  other confirmation in this OS does — "Save" saves then closes, "Don't
-  Save" (or dismissing the dialog entirely, same as clicking it) discards
-  and closes anyway. There's no third "cancel, keep editing" option: this
-  is a deliberately simple two-outcome prompt, not a three-button one,
-  matching `confirmDialog()`'s existing shape rather than extending it.
-- **`note.content`** (the second argument `init()` accepts) is a
-  placeholder for a real future feature — the File Explorer opening a
-  `.txt` file straight into this editor, the same way it already opens
+  other confirmation in this OS does — "Save" downloads the `.txt` then
+  closes, "Don't Save" (or dismissing the dialog entirely, same as
+  clicking it) closes without downloading anything, and since nothing
+  here persists on its own, that text is just gone. There's no third
+  "cancel, keep editing" option: a deliberately simple two-outcome
+  prompt, not a three-button one, matching `confirmDialog()`'s existing
+  shape rather than extending it.
+- **`note`** (the second argument `init()` accepts, `{name, content}`)
+  is a placeholder for a real future feature — the File Explorer opening
+  a `.txt` file straight into this editor, the same way it already opens
   images into `apps/media-viewer`. Nothing calls it with a value yet
   (there's no `.txt` entry in `assets/manifest.js` to open from), but
-  accepting it now costs nothing and avoids a signature change later.
-- Resets with everything else: `os:reset` (the desktop's right-click
-  Reset) clears the saved note along with every other piece of persisted
-  state, same one-listener-per-owner pattern `js/folders.js`/`js/theme.js`
-  etc. all use.
+  accepting it now costs nothing and avoids a signature change later —
+  `note.name`, once that exists, becomes the default download filename
+  too (not just the starting content), so editing an opened file and
+  saving offers its own name back instead of `note.txt`.
 
 ## Adding a new app later
 
