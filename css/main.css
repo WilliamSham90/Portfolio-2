@@ -891,3 +891,22 @@ body {
   color: var(--text);
   line-height: 1.4;
 }
+
+/* ---------- PAINT TEXT TOOL (apps/paint/index.js) ----------
+   The Text tool's editable box — appended straight to <body> and
+   positioned with the raw clientX/clientY from the click that created it
+   (position: fixed uses the same viewport-relative coordinate system,
+   so no relative-to-the-canvas math is needed at all), rather than living
+   inside .paint-app's own @scope, since it has to float above that
+   window's own chrome, not just its content. */
+.paint-text-input {
+  position: fixed;
+  z-index: 1200;
+  min-width: 90px;
+  padding: 2px 4px;
+  border: 1px dashed #888;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.92);
+  color: #111;
+  font: 16px sans-serif; /* matches the fillText() font it gets stamped with, in index.js */
+}

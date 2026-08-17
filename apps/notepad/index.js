@@ -2,13 +2,11 @@
    notepad/index.js
    A blank page every time it opens — no persistence of its own, on
    purpose. "Save" downloads the current text as a real .txt file to the
-   visitor's own computer: a Blob + a temporary <a download> click, the
-   universally-supported way to do this — the newer File System Access
-   API's showSaveFilePicker() would give a real "Save As" dialog, but
-   Firefox and Safari don't implement it at all, and a portfolio site
-   can't assume every visitor is on Chromium. Closing with unsaved text
-   prompts first, via the beforeClose() this file returns from init() —
-   see widget/popup/index.js for the other half of that contract.
+   visitor's own computer (js/download-file.js). Closing with unsaved
+   text prompts first, via the beforeClose() this file returns from
+   init() — see widget/popup/index.js for the other half of that
+   contract — and the toolbar Save button prompts too, before it
+   downloads anything.
 
    `note`, if given, is a placeholder for a real future feature — the
    File Explorer opening a .txt file straight into this editor, the same
@@ -21,6 +19,7 @@
    ===================================================================== */
 
 import { confirmDialog } from '../../js/confirm-dialog.js';
+import { downloadFile } from '../../js/download-file.js';
 
 const DEFAULT_FILE_NAME = 'note.txt';
 
@@ -52,18 +51,9 @@ export function init(container, note) {
 
   function save() {
     const blob = new Blob([textEl.value], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click(); // no need to attach it to the DOM first — click() works either way
-    // a tick's delay rather than revoking immediately after click() — belt
-    // and suspenders against a browser that's still reading the blob URL
-    // right when it'd otherwise get pulled out from under it
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-    // there's no callback/event that confirms the download (or an OS save
-    // dialog inside it) actually completed — this counts it as saved the
-    // moment it's triggered, same as any other browser download button
+    downloadFile(blob, fileName);
+    // there's no callback confirming the download actually completed —
+    // this counts it as saved the moment it's triggered, see download-file.js
     setStatus(false);
   }
 

@@ -25,7 +25,8 @@ Portfolio/
 │   ├── start-menu.js             the taskbar's Start button + its dropdown (see "Start menu")
 │   ├── power.js                  the shut-down/boot-up overlay (see "Start menu")
 │   ├── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
-│   └── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
+│   ├── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
+│   └── download-file.js            saves a Blob to the visitor's own computer (see "Notepad")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -68,6 +69,10 @@ Portfolio/
     │   ├── index.css
     │   └── index.js
     ├── notepad/                 one always-there note, asks before closing unsaved (see "Notepad")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    ├── paint/                   the 16-tool MS-Paint-style editor (see "Paint")
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
@@ -656,19 +661,23 @@ virtual filesystem this OS doesn't have (folders, `js/folders.js`, only
 ever hold *apps*, not documents) — that's real scope this app
 deliberately doesn't take on.
 
-- **The download itself**: a `Blob` (`text/plain;charset=utf-8`) turned
-  into an object URL, assigned to a temporary `<a download="note.txt">`,
-  clicked in JS, then `URL.revokeObjectURL()`'d a tick later rather than
-  immediately — belt and suspenders against a browser that's still
-  reading the blob URL right when it'd otherwise get pulled out from
-  under it. This is the universally-supported way to do this; the newer
-  File System Access API's `showSaveFilePicker()` would give a real
-  "Save As" dialog (and let a second Save overwrite the same file without
-  re-prompting), but neither Firefox nor Safari implement it at all, and
-  a portfolio site can't assume every visitor is on Chromium. There's
-  also no callback confirming a download actually finished (or that an
-  OS save dialog inside it wasn't cancelled) — this counts it as saved
-  the moment it's triggered, same as any other download button would.
+- **The download itself** is `js/download-file.js`'s one function,
+  `downloadFile(blob, fileName)` — a `Blob` (`text/plain;charset=utf-8`
+  here) turned into an object URL, assigned to a temporary
+  `<a download>`, clicked in JS, then `URL.revokeObjectURL()`'d a tick
+  later rather than immediately — belt and suspenders against a browser
+  that's still reading the blob URL right when it'd otherwise get pulled
+  out from under it. This is the universally-supported way to do this;
+  the newer File System Access API's `showSaveFilePicker()` would give a
+  real "Save As" dialog (and let a second Save overwrite the same file
+  without re-prompting), but neither Firefox nor Safari implement it at
+  all, and a portfolio site can't assume every visitor is on Chromium.
+  There's also no callback confirming a download actually finished (or
+  that an OS save dialog inside it wasn't cancelled) — a caller just
+  counts it as saved the moment it's triggered, same as any other
+  download button would. `apps/paint` (below) shares this same module
+  rather than repeating it, downloading a `.jpg` `Blob` instead of a
+  `.txt` one.
 - **Explicit Save only, no autosave** — there's nothing to autosave *to*
   here besides triggering a real download on every keystroke, which
   would be its own kind of chaos. The toolbar's status text (`Saved` /
@@ -704,6 +713,69 @@ deliberately doesn't take on.
   `note.name`, once that exists, becomes the default download filename
   too (not just the starting content), so editing an opened file and
   saving offers its own name back instead of `note.txt`.
+
+## Paint
+
+`apps/paint/` is a small MS-Paint-style editor — all 16 tools of the
+classic toolbox (select, eraser, fill, eyedropper, magnifier, pencil,
+brush, airbrush, text, line, curve, rectangle, polygon, ellipse, rounded
+rectangle), a native `<input type="color">` instead of a full palette +
+custom-color dialog, and one Save button. Built with
+[jspaint](https://github.com/1j01/jspaint) as the reference for which
+tools a "real" paint program has and roughly how each behaves — not a
+port of it, and deliberately simpler everywhere jspaint itself goes
+further (one brush shape, no fill-style picker for shapes, Curve's a
+single bend not two).
+
+- **Two real `<canvas>` elements, stacked** — `.paint-canvas` is the
+  actual artwork (what gets saved); `.paint-overlay`, exactly on top and
+  `pointer-events: none` so it never intercepts input, is where every
+  tool's *live preview* goes instead — a selection marquee, a shape being
+  dragged out, a polygon's in-progress edges. Committing an action draws
+  once onto the real canvas and clears the overlay, so nothing a preview
+  draws can *ever* end up baked into the saved image — it never touches
+  the canvas that gets saved, structurally, not by carefully remembering
+  to erase it afterward.
+- **Every tool is the same shape**: `{onDown, onMove, onUp, onDoubleClick,
+  commitPending}` (`tool()` fills in whichever a given tool doesn't need
+  with a no-op). `onMove(pos, isPointerDown)` fires on *every* pointer
+  move, not just while dragging — nearly every tool ignores it unless
+  `isPointerDown`, but Polygon's "next edge follows the cursor" preview
+  specifically needs to track it between clicks, while the button's up.
+  `commitPending()` finishes whatever a multi-step tool was in the middle
+  of — a selection mid-move, Curve's un-bent baseline, an unclosed
+  polygon, an unstamped text box — called both when switching tools and
+  from `beforeClose()`, so nothing is ever silently lost.
+- **Select (Rectangular / Free-Form)** drags out a marquee first; dragging
+  again *from inside* that marquee is what actually cuts and moves those
+  pixels (a `Path2D` — a plain rectangle for one, the traced lasso path
+  for the other — `ctx.clip()`ped onto an offscreen canvas to lift just
+  that region, however it's shaped). Marquee-and-never-drag genuinely
+  touches nothing; the cut only happens the moment a move actually starts.
+- **Curve** is a straight line first (drag once), then *one more* drag
+  bends it via `quadraticCurveTo` — a single control point, not real MS
+  Paint's two independent bends (`bezierCurveTo`). **Polygon** is
+  click-per-vertex with a live rubber-band edge to the cursor between
+  clicks, closed with a double-click.
+- **Fill** is a classic iterative flood fill — an explicit stack, not
+  recursion, so it can't blow the call stack on a large fill.
+- **Save** — `canvas.toBlob(cb, 'image/jpeg', 0.92)` into
+  `js/download-file.js`'s `downloadFile()` (see "Notepad" for how that
+  works and why not the newer File System Access API). The canvas starts
+  filled solid white, not left at its default transparent — JPEG has no
+  alpha channel, so an untouched canvas would otherwise export as solid
+  black in most browsers. Both the toolbar Save button (confirms first,
+  "Save"/"Cancel") and closing with unsaved changes (`beforeClose()`,
+  "Save"/"Don't Save") work exactly like `apps/notepad`'s do — see that
+  section for why closing doesn't get a second confirmation stacked on
+  top of an explicit toolbar Save.
+- **The Magnifier** cycles 100% → 200% → 400% → 100%, applied by setting
+  real `width`/`height` CSS on both canvases (not a `transform: scale()`)
+  specifically so `.paint-canvas-wrap`'s `overflow: auto` actually has a
+  bigger layout box to scroll — a transform changes what's *painted*, not
+  the element's layout size, so scrolling to reach the edges of a zoomed
+  canvas wouldn't work with one. `image-rendering: pixelated` keeps the
+  enlarged pixels crisp instead of blurring them.
 
 ## Adding a new app later
 

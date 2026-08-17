@@ -1,0 +1,159 @@
+@scope (.paint-app) {
+  :scope {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* fills the window when maximized/resized — see the
+                     .widget-instance note in css/main.css; a no-op at the
+                     default content-sized window height */
+    min-width: 420px;
+    min-height: 360px;
+  }
+
+  .paint-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 8px;
+    background: rgba(255,255,255,0.25);
+    border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+
+  .paint-color {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: none;
+    cursor: pointer;
+  }
+  /* the swatch fills the whole control in every browser that renders
+     <input type="color"> as a plain rectangle — Chromium adds its own
+     inset border around the swatch by default, which otherwise doubles
+     up against the border already set above */
+  .paint-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  .paint-color::-webkit-color-swatch {
+    border: none;
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  .paint-save {
+    padding: 6px 16px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.4);
+    color: var(--win-text);
+    cursor: pointer;
+    font: var(--fs-sm) var(--font-mono);
+  }
+  .paint-save:hover,
+  .paint-save:focus-visible {
+    background: rgba(255,255,255,0.65);
+    outline: none;
+  }
+
+  .paint-status {
+    font: var(--fs-xs) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.6;
+  }
+
+  .paint-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .paint-toolbox {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    align-content: start;
+    padding: 6px;
+    background: rgba(255,255,255,0.2);
+    border-right: 1px solid rgba(0,0,0,0.12);
+    overflow-y: auto;
+  }
+
+  .paint-tool {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: calc(var(--radius) - 2px);
+    background: transparent;
+    color: var(--win-text);
+    cursor: pointer;
+  }
+  .paint-tool:hover,
+  .paint-tool:focus-visible {
+    background: rgba(255,255,255,0.5);
+    outline: none;
+  }
+  .paint-tool.is-active {
+    background: rgba(255,255,255,0.7);
+    border-color: var(--hotrose);
+  }
+
+  .paint-tool-icon {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .paint-tool-glyph {
+    font: 700 15px var(--font-mono);
+    line-height: 1;
+  }
+
+  .paint-canvas-wrap {
+    flex: 1;
+    min-width: 0;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 14px;
+    background: rgba(0,0,0,0.06);
+  }
+
+  .paint-canvas-stack {
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 4px 14px rgba(0,0,0,0.2);
+  }
+
+  .paint-canvas,
+  .paint-overlay {
+    display: block;
+    background: #fff;
+  }
+  .paint-canvas {
+    cursor: crosshair;
+    touch-action: none; /* dragging to draw on mobile shouldn't also scroll the page */
+  }
+  .paint-overlay {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    pointer-events: none; /* previews live here, but input still goes to .paint-canvas beneath it */
+  }
+  /* crisp pixels, not a blurry scale, once the magnifier tool scales these
+     up via width/height (see index.js — ctx.imageSmoothingEnabled is a
+     canvas-API concern for *drawing*; this is the separate CSS-level
+     concern for *displaying* one larger than its own pixel buffer) */
+  .paint-canvas.is-zoomed,
+  .paint-overlay.is-zoomed {
+    image-rendering: pixelated;
+  }
+}
