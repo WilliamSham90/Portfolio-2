@@ -473,6 +473,10 @@ same module rather than rolling its own toast.
   `os-notification-history`) — deduplicated by `id`, so a notification
   that's fired more than once only ever appears once in the list (moved
   to reflect its latest occurrence, not stacked as a duplicate).
+- Each row in the bell menu has its own ✕ to delete just that entry, for
+  when the list gets long — same `.taskbar-group-row`/`-close` shape the
+  taskbar's grouped-tab dropdown already uses (a sibling button next to
+  the row's main one, not nested inside it, since buttons can't nest).
 
 ## Start menu
 

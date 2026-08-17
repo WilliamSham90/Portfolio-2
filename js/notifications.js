@@ -47,7 +47,24 @@ export function initNotifications() {
         showToast(entry.title, entry.text);
         hideMenu();
       });
-      return item;
+
+      // sibling of item rather than nested inside it (buttons can't nest) —
+      // same shape as taskbar.js's .taskbar-group-row/-close
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'notification-history-remove';
+      removeBtn.setAttribute('aria-label', `Remove ${entry.title} from history`);
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        removeFromHistory(entry.id);
+        renderMenu();
+      });
+
+      const row = document.createElement('div');
+      row.className = 'notification-history-row';
+      row.append(item, removeBtn);
+      return row;
     }));
   }
 
@@ -116,5 +133,16 @@ export function listHistory() {
     return Array.isArray(saved) ? saved : [];
   } catch {
     return [];
+  }
+}
+
+/** Deletes one entry from the history list (the bell menu's per-row ✕) —
+ *  doesn't touch whatever toast is currently showing, if any. */
+function removeFromHistory(id) {
+  const history = listHistory().filter((n) => n.id !== id);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  } catch {
+    // storage unavailable — nothing to persist
   }
 }
