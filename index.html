@@ -51,6 +51,18 @@
 
   </div>
 
+  <!-- js/welcome.js's one-time greeting toast -->
+  <div id="welcome-toast" class="welcome-toast" hidden role="status">
+    <button type="button" class="welcome-toast-close" aria-label="Dismiss">&times;</button>
+    <p class="welcome-toast-title">Welcome to Williams OS</p>
+    <p class="welcome-toast-text">
+      This is William's portfolio site, come to life as a little desktop
+      of its own. Feel free to browse, break things, and poke around —
+      you can always reset the desktop from the right-click menu if you
+      need a clean slate.
+    </p>
+  </div>
+
   <!-- the OS's own right-click menu (context-menu.js). Shift+right-click
        always falls through to the browser's real one instead — see
        README.md > "Right-click menu" — so Inspect stays reachable. -->

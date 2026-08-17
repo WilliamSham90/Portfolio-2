@@ -529,14 +529,26 @@ export function init(container) {
   const zoomTool = tool({
     onDown() {
       zoomIndex = (zoomIndex + 1) % ZOOM_LEVELS.length;
-      const scale = ZOOM_LEVELS[zoomIndex];
-      for (const el of [canvas, overlay]) {
-        el.style.width = `${el.width * scale}px`;
-        el.style.height = `${el.height * scale}px`;
-        el.classList.toggle('is-zoomed', scale !== 1);
-      }
+      applyZoomStyle();
     },
   });
+  function applyZoomStyle() {
+    const scale = ZOOM_LEVELS[zoomIndex];
+    for (const el of [canvas, overlay]) {
+      if (scale === 1) {
+        // back to the default CSS rule (100% of .paint-canvas-stack) —
+        // an *inline* "480px" here would pin the canvas back to whatever
+        // its resolution was the moment it was last zoomed, permanently
+        // overriding fitCanvasToWrap()'s whole reason for existing
+        el.style.width = '';
+        el.style.height = '';
+      } else {
+        el.style.width = `${el.width * scale}px`;
+        el.style.height = `${el.height * scale}px`;
+      }
+      el.classList.toggle('is-zoomed', scale !== 1);
+    }
+  }
 
   const TOOLS = {
     'select-rect': makeSelectTool('rect'),
@@ -559,6 +571,59 @@ export function init(container) {
 
   /* ---------- wiring ---------- */
   colorInput.addEventListener('input', () => { color = colorInput.value; });
+
+  // grows/shrinks the canvas to fill the window around it (maximizing, or
+  // a manual resize) instead of staying at its initial fixed size — a
+  // ResizeObserver on the wrap, not a popup-specific event, since nothing
+  // in widget/popup/index.js announces "the window's content area changed
+  // size" and this is the right generic tool for "react to an element's
+  // size changing, whatever the cause" regardless (js/taskbar.js's
+  // overflow-arrow logic already leans on the same thing)
+  const wrap = container.querySelector('.paint-canvas-wrap');
+  let resizeTimer = null;
+  let firstFit = true;
+  new ResizeObserver(() => {
+    if (firstFit) {
+      // immediate, not debounced — this first call is the wrap reporting
+      // its initial size right after .observe() starts, and running it
+      // straight away (rather than 120ms later, same as every subsequent
+      // resize) avoids a visible flash of the canvas at its old size
+      firstFit = false;
+      fitCanvasToWrap();
+      return;
+    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitCanvasToWrap, 120); // debounced — a window drag-resize fires this repeatedly, not once
+  }).observe(wrap);
+
+  /** Existing artwork is preserved (top-left anchored) across a resize —
+   *  shrinking crops it, growing just adds white space, same as resizing
+   *  a real image canvas. Skipped while zoomed in: at any zoom above
+   *  100%, the canvas is *already* meant to exceed the wrap's visible
+   *  area (that's what zooming in means) and scrolls instead — auto-
+   *  fitting the underlying resolution to the viewport at the same time
+   *  would fight with that instead of meaning anything coherent. */
+  function fitCanvasToWrap() {
+    if (zoomIndex !== 0) return;
+    const padding = 28; // roughly matches .paint-canvas-wrap's own CSS padding
+    const targetWidth = Math.max(200, Math.floor(wrap.clientWidth - padding));
+    const targetHeight = Math.max(150, Math.floor(wrap.clientHeight - padding));
+    if (targetWidth === canvas.width && targetHeight === canvas.height) return;
+
+    const snapshot = document.createElement('canvas');
+    snapshot.width = canvas.width;
+    snapshot.height = canvas.height;
+    snapshot.getContext('2d').drawImage(canvas, 0, 0);
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    overlay.width = targetWidth;
+    overlay.height = targetHeight;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(snapshot, 0, 0);
+  }
 
   toolButtons.forEach((btn) => {
     btn.addEventListener('click', () => {

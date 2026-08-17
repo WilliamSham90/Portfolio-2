@@ -13,6 +13,7 @@ import { initStartMenu } from './start-menu.js';
 import { initPower } from './power.js';
 import { initClockPanel } from './clock-panel.js';
 import { initTaskbar, registerWindow } from './taskbar.js';
+import { initWelcome } from './welcome.js';
 
 function icon(filename) {
   return new URL(`../assets/system/Icons/basic/${filename}`, import.meta.url).href;
@@ -80,6 +81,9 @@ async function boot() {
 
   // 3. taskbar clock + its slide-in date/calendar panel
   initClockPanel();
+
+  // 4. a one-time greeting for a first-ever visit (or a fresh Reset)
+  initWelcome();
 }
 
 let openCount = 0;

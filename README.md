@@ -26,7 +26,8 @@ Portfolio/
 │   ├── power.js                  the shut-down/boot-up overlay (see "Start menu")
 │   ├── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
 │   ├── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
-│   └── download-file.js            saves a Blob to the visitor's own computer (see "Notepad")
+│   ├── download-file.js            saves a Blob to the visitor's own computer (see "Notepad")
+│   └── welcome.js                   the first-visit/post-Reset greeting toast (see "Welcome toast")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -438,6 +439,25 @@ it's held, so the native menu (Inspect, etc.) opens exactly as normal.
 That's the only thing touched; keyboard devtools shortcuts (F12,
 Ctrl+Shift+I) were never intercepted in the first place.
 
+## Welcome toast
+
+`js/welcome.js` shows a small greeting, top-right, the first time this OS
+is ever opened in a browser — and, since it clears its own `localStorage`
+key (`os-welcomed`) on `os:reset` the same way every other piece of
+persisted state here clears its own, again after a Reset Desktop genuinely
+puts things back to "brand new." There's no separate "was this a reset"
+check — a reset already clearing the flag is the only reason it needs is
+identical to a real first visit finding it unset, so one `if` covers both.
+
+- Same slide-in-from-the-edge treatment `.clock-panel` uses (`hidden`
+  toggled off, a forced reflow, *then* the class that starts the
+  `transform` transition — see "Taskbar clock" for why that specific
+  order matters), just anchored to the top-right corner instead of
+  hugging the taskbar.
+- Dismissible either way: a close button, or left alone for 9 seconds and
+  it hides itself — `role="status"` rather than `role="alert"`, since a
+  welcome message is worth mentioning, not worth interrupting anything for.
+
 ## Start menu
 
 `js/start-menu.js` is the taskbar's left-side Start button (`home.png`,
@@ -776,6 +796,22 @@ single bend not two).
   the element's layout size, so scrolling to reach the edges of a zoomed
   canvas wouldn't work with one. `image-rendering: pixelated` keeps the
   enlarged pixels crisp instead of blurring them.
+- **The canvas fills the window, not just its own fixed default size** —
+  a `ResizeObserver` on `.paint-canvas-wrap` (same generic "react to an
+  element's size changing, whatever caused it" tool `js/taskbar.js`'s
+  overflow arrows already lean on, rather than anything popup-specific —
+  nothing in `widget/popup/index.js` announces "the window's content area
+  changed size") debounced 120ms, since dragging a window's edge fires
+  this repeatedly, not once. Growing or shrinking the canvas would
+  normally *clear* it (that's how a `<canvas>` element's `width`/`height`
+  attributes work), so a resize actually draws the old contents onto a
+  temporary canvas first and copies them back onto the resized one
+  afterward — top-left anchored, so shrinking crops and growing just adds
+  white space, the same as resizing a real image canvas would. Skipped
+  entirely above 100% zoom: at any zoom level, the canvas is *already*
+  meant to exceed the visible area (that's what zooming in means) and
+  scrolls instead of fitting, so auto-fitting the underlying resolution
+  to the viewport at the same time would just fight with that.
 
 ## Adding a new app later
 

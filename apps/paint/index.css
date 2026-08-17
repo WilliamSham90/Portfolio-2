@@ -119,23 +119,39 @@
   .paint-canvas-wrap {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     overflow: auto;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
     padding: 14px;
     background: rgba(0,0,0,0.06);
   }
 
   .paint-canvas-stack {
     position: relative;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 4px 14px rgba(0,0,0,0.2);
   }
 
+  /* CSS size (how big it's *drawn*) is deliberately decoupled from the
+     width/height attributes (the actual pixel buffer, set in index.js) —
+     100% of the stack by default, so the window's own natural size comes
+     from .paint-app's min-width/height and the popup's own max-width/70vh
+     cap, never from whatever the canvas's pixel resolution happened to be
+     last. Without this, growing the canvas's resolution while maximized
+     and then un-maximizing had nothing smaller to *shrink back to*: the
+     window's own "auto" size is driven by its content, and the content
+     (the canvas) was still reporting the maximized resolution as its
+     size — a real bug, not a hypothetical one. The Magnifier overrides
+     this with an explicit inline pixel size instead (see applyZoomStyle()
+     in index.js), on purpose — it's the one time this OS *wants* the
+     canvas to be larger than its container and scroll. */
   .paint-canvas,
   .paint-overlay {
     display: block;
+    width: 100%;
+    height: 100%;
     background: #fff;
   }
   .paint-canvas {
