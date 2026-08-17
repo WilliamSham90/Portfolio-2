@@ -531,6 +531,31 @@ body {
   line-height: 1.4;
 }
 
+/* ---------- PASSWORD DIALOG (password-dialog.js) ----------
+   #password-dialog reuses every .confirm-dialog* class above as-is —
+   these two are the only pieces it adds. */
+.password-dialog-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: rgba(0,0,0,0.15);
+  color: var(--text);
+  font: var(--fs-base) var(--font-mono);
+}
+.password-dialog-input:focus-visible {
+  outline: none;
+  border-color: var(--text);
+}
+
+.password-dialog-error {
+  margin: 0 0 12px;
+  font: var(--fs-sm) var(--font-mono);
+  color: #ff8a8a;
+}
+
 .confirm-dialog-actions {
   display: flex;
   justify-content: flex-end;

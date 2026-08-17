@@ -345,15 +345,34 @@ OS's own chrome, not user-browsable media.
 
 Desktop folders and the File Explorer ("My Computer") work together:
 
-- A folder is virtual — `{id, name, appIds}` — since this is a static
-  site with no backend to create a real one on disk. `js/folders.js`
-  (same shared-kernel pattern as `js/theme.js`) is the only thing that
-  reads/writes them, via `localStorage`. Any change fires
-  `os:folders-changed` on `document`, so the desktop and every open File
-  Explorer window can re-render themselves. What icon a folder is drawn
-  with isn't stored on the folder at all — it comes from `js/icon-style.js`
-  (see "Icons" above), so switching icon style re-skins every folder at
-  once instead of needing to touch this data.
+- A folder is virtual — `{id, name, appIds}`, plus two optional fields
+  most folders don't have (`icon`, and `locked`/`unlocked` — see below) —
+  since this is a static site with no backend to create a real one on
+  disk. `js/folders.js` (same shared-kernel pattern as `js/theme.js`) is
+  the only thing that reads/writes them, via `localStorage`. Any change
+  fires `os:folders-changed` on `document`, so the desktop and every open
+  File Explorer window can re-render themselves. Which actual icon *file*
+  a folder is drawn with still comes from `js/icon-style.js` (see "Icons"
+  above) — a folder just optionally names *which* icon (`folder.icon`, a
+  `PAIRS` key there — normal folders have none, which defaults to the
+  plain generic one), so switching icon style re-skins every folder at
+  once regardless.
+- **Two folders every fresh desktop starts with**: **Locked** and
+  **Malware**, both empty — `js/folders.js`'s `DEFAULT_FOLDERS`, only
+  ever returned when nothing's been saved yet (a first-ever visit, or
+  right after Reset), so genuinely deleting one of these sticks like any
+  other delete would. **Locked** needs a password (`12345678`,
+  `unlockFolder()`) the first time it's opened — `apps/file-explorer`
+  prompts for it automatically the moment the folder is selected (desktop
+  icon or sidebar, either one), via `js/password-dialog.js` (a second
+  `confirmDialog()`-shaped dialog, reusing its exact `.confirm-dialog*`
+  CSS, just with a password `<input>` and an inline error for a wrong
+  guess — retried in a loop until it's right or cancelled). Getting it
+  right sets `folder.unlocked = true` and persists that, so it only ever
+  has to be entered once, not once per visit; Reset clears it back to
+  locked along with everything else. **Malware** isn't actually
+  malware — it's an empty placeholder for education-focused content to
+  fill in later, nothing more.
 - Folders live as regular icons on the desktop grid, right alongside
   apps — `widget/app-grid` asks `js/folders.js` for the current list and
   draws them with the exact same draggable/swappable icon it already

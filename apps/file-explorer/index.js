@@ -1,7 +1,8 @@
 import { APPS, openApp } from '../../js/main.js';
-import { listFolders, getFolder, removeAppFromFolder } from '../../js/folders.js';
+import { listFolders, getFolder, removeAppFromFolder, unlockFolder } from '../../js/folders.js';
 import { styledIconUrl } from '../../js/icon-style.js';
 import { isImageIcon } from '../../js/icon.js';
+import { passwordDialog } from '../../js/password-dialog.js';
 import manifest from '../../assets/manifest.js';
 
 // no "Fonts" entry — theme fonts live under assets/ but aren't meant to
@@ -42,6 +43,28 @@ export function init(container, folderId) {
   function select(next) {
     selected = next;
     render();
+    maybeAutoUnlock();
+  }
+
+  // a locked-and-not-yet-unlocked folder prompts for its password as soon
+  // as it's selected, whether that's a sidebar click (select(), above) or
+  // opening straight into it from the desktop (the folderId param below)
+  function maybeAutoUnlock() {
+    if (selected?.type !== 'folder') return;
+    const folder = getFolder(selected.id);
+    if (folder?.locked && !folder.unlocked) attemptUnlock(folder);
+  }
+
+  /** Prompts for the password, retrying (with an inline error) on a wrong
+   *  guess, until it's either correct or the user cancels. */
+  async function attemptUnlock(folder) {
+    let error = null;
+    for (;;) {
+      const password = await passwordDialog(`Enter the password to open "${folder.name}"`, { error });
+      if (password === null) return; // cancelled — stays on the locked placeholder
+      if (unlockFolder(folder.id, password)) return; // os:folders-changed re-renders this open
+      error = 'Incorrect password. Try again.';
+    }
   }
 
   function isSelected(type, key) {
@@ -78,11 +101,10 @@ export function init(container, folderId) {
 
     const folders = listFolders();
     if (folders.length > 0) {
-      const folderIcon = styledIconUrl('folder');
       sidebarEl.appendChild(heading('Folders'));
       for (const folder of folders) {
         sidebarEl.appendChild(sidebarItem({
-          icon: folderIcon,
+          icon: styledIconUrl(folder.icon || 'folder'),
           name: folder.name,
           active: isSelected('folder', folder.id),
           onClick: () => select({ type: 'folder', id: folder.id }),
@@ -118,7 +140,11 @@ export function init(container, folderId) {
     if (selected.type === 'folder') {
       const folder = getFolder(selected.id);
       setTitle(folder.name);
-      renderFolder(folder);
+      if (folder.locked && !folder.unlocked) {
+        renderLocked(folder);
+      } else {
+        renderFolder(folder);
+      }
       return;
     }
 
@@ -154,6 +180,29 @@ export function init(container, folderId) {
       });
       listEl.appendChild(entry.el);
     }
+  }
+
+  function renderLocked(folder) {
+    const wrap = document.createElement('div');
+    wrap.className = 'explorer-locked';
+
+    const icon = document.createElement('img');
+    icon.className = 'explorer-locked-icon';
+    icon.src = styledIconUrl(folder.icon || 'folder');
+    icon.alt = '';
+    icon.draggable = false;
+
+    const text = document.createElement('p');
+    text.textContent = 'This folder is locked.';
+
+    const unlockBtn = document.createElement('button');
+    unlockBtn.type = 'button';
+    unlockBtn.className = 'explorer-locked-unlock';
+    unlockBtn.textContent = 'Unlock';
+    unlockBtn.addEventListener('click', () => attemptUnlock(folder));
+
+    wrap.append(icon, text, unlockBtn);
+    listEl.appendChild(wrap);
   }
 
   function renderCategory(cat) {
@@ -217,6 +266,7 @@ export function init(container, folderId) {
   document.addEventListener('os:icon-style-changed', render);
 
   render();
+  maybeAutoUnlock(); // covers opening straight into a locked folder from the desktop
 }
 
 function heading(text) {

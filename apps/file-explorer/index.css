@@ -227,6 +227,44 @@
     grid-column: 1 / -1;
   }
 
+  /* ---------- locked-folder placeholder (a selected folder with
+     locked && !unlocked — see js/folders.js's unlockFolder()) ---------- */
+  .explorer-locked {
+    grid-column: 1 / -1; /* same reason .explorer-empty spans every column in grid view */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 4px;
+    text-align: center;
+  }
+  .explorer-locked-icon {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    opacity: 0.85;
+  }
+  .explorer-locked p {
+    margin: 0;
+    font: var(--fs-sm) var(--font-mono);
+    color: var(--win-text);
+    opacity: 0.6;
+  }
+  .explorer-locked-unlock {
+    padding: 6px 16px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.4);
+    color: var(--win-text);
+    cursor: pointer;
+    font: var(--fs-sm) var(--font-mono);
+  }
+  .explorer-locked-unlock:hover,
+  .explorer-locked-unlock:focus-visible {
+    background: rgba(255,255,255,0.65);
+    outline: none;
+  }
+
   /* ---------- grid-view cell (the .is-grid counterpart to .explorer-row) ----------
      .explorer-cell-wrap is the actual grid item (sized by the grid track);
      .explorer-cell is the clickable button inside it. Two elements, same

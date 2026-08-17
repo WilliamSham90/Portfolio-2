@@ -87,6 +87,22 @@
     </div>
   </div>
 
+  <!-- themed password prompt for unlocking apps/file-explorer's "Locked"
+       folder (password-dialog.js) — shares its look with #confirm-dialog
+       above, just with a password input + inline error added in -->
+  <div id="password-dialog" class="confirm-dialog" hidden>
+    <div class="confirm-dialog-backdrop"></div>
+    <div class="confirm-dialog-panel" role="alertdialog" aria-modal="true">
+      <p class="confirm-dialog-message"></p>
+      <input type="password" class="password-dialog-input" autocomplete="off" spellcheck="false" aria-label="Password">
+      <p class="password-dialog-error" hidden></p>
+      <div class="confirm-dialog-actions">
+        <button type="button" class="confirm-dialog-cancel">Cancel</button>
+        <button type="button" class="confirm-dialog-confirm">Unlock</button>
+      </div>
+    </div>
+  </div>
+
   <!-- taskbar.js's dropdown, listing each open window of a grouped app tab -->
   <div id="taskbar-group-menu" class="taskbar-group-menu" hidden role="menu"></div>
 

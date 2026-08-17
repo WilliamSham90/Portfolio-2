@@ -66,8 +66,7 @@ function visibleItems(ctx) {
   const appItems = ctx.apps
     .filter((app) => !filedAppIds.has(app.id))
     .map((app) => ({ kind: 'app', id: app.id, name: app.name, icon: app.icon }));
-  const folderIcon = styledIconUrl('folder');
-  const folderItems = folders.map((f) => ({ kind: 'folder', id: f.id, name: f.name, icon: folderIcon }));
+  const folderItems = folders.map((f) => ({ kind: 'folder', id: f.id, name: f.name, icon: styledIconUrl(f.icon || 'folder') }));
   return [...appItems, ...folderItems];
 }
 
