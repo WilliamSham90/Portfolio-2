@@ -47,20 +47,27 @@
         <span class="taskbar-clock-time"></span>
         <span class="taskbar-clock-date"></span>
       </button>
+      <!-- notifications.js -->
+      <button type="button" id="notification-history-button" class="taskbar-icon-button" aria-label="Notification history" aria-haspopup="true">
+        <img src="./assets/system/Icons/basic/notification.png" alt="" draggable="false">
+      </button>
     </nav>
 
   </div>
 
-  <!-- js/welcome.js's one-time greeting toast -->
-  <div id="welcome-toast" class="welcome-toast" hidden role="status">
-    <button type="button" class="welcome-toast-close" aria-label="Dismiss">&times;</button>
-    <p class="welcome-toast-title">Welcome to Williams OS</p>
-    <p class="welcome-toast-text">
-      This is William's portfolio site, come to life as a little desktop
-      of its own. Feel free to browse, break things, and poke around —
-      you can always reset the desktop from the right-click menu if you
-      need a clean slate.
-    </p>
+  <!-- notifications.js's toast, reused for whatever notification is
+       currently showing — not specific to the welcome message, even
+       though that's the only thing that fires one today -->
+  <div id="notification-toast" class="notification-toast" hidden role="status">
+    <button type="button" class="notification-toast-close" aria-label="Dismiss">&times;</button>
+    <p class="notification-toast-title"></p>
+    <p class="notification-toast-text"></p>
+  </div>
+
+  <!-- notifications.js's history dropdown -->
+  <div id="notification-history-menu" class="notification-history-menu" hidden role="menu">
+    <p class="notification-history-empty">No notifications yet.</p>
+    <div class="notification-history-list"></div>
   </div>
 
   <!-- the OS's own right-click menu (context-menu.js). Shift+right-click

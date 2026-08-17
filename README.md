@@ -27,7 +27,8 @@ Portfolio/
 │   ├── clock-panel.js             taskbar clock + its slide-in date/calendar panel (see "Taskbar clock")
 │   ├── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
 │   ├── download-file.js            saves a Blob to the visitor's own computer (see "Notepad")
-│   └── welcome.js                   the first-visit/post-Reset greeting toast (see "Welcome toast")
+│   ├── notifications.js             the toast + its taskbar history dropdown (see "Notifications")
+│   └── welcome.js                   fires the one-time greeting notification (see "Notifications")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -439,24 +440,39 @@ it's held, so the native menu (Inspect, etc.) opens exactly as normal.
 That's the only thing touched; keyboard devtools shortcuts (F12,
 Ctrl+Shift+I) were never intercepted in the first place.
 
-## Welcome toast
+## Notifications
 
-`js/welcome.js` shows a small greeting, top-right, the first time this OS
-is ever opened in a browser — and, since it clears its own `localStorage`
-key (`os-welcomed`) on `os:reset` the same way every other piece of
-persisted state here clears its own, again after a Reset Desktop genuinely
-puts things back to "brand new." There's no separate "was this a reset"
-check — a reset already clearing the flag is the only reason it needs is
-identical to a real first visit finding it unset, so one `if` covers both.
+`js/notifications.js` is a small notification center, not a one-off
+welcome banner — `notify({id, title, text})` shows the toast (top-right,
+same slide-in-from-the-edge treatment `.clock-panel` uses: `hidden`
+toggled off, a forced reflow, *then* the class that starts the
+`transform` transition — see "Taskbar clock" for why that order matters)
+*and* records it into a persisted history list, which the taskbar's bell
+button (`notification.png`, beside the clock) lists — clicking a past
+entry there just shows that same toast again, it doesn't add a new
+history entry, since it's the same notification recurring, not a new
+occurrence of it. `js/welcome.js` is the one thing that calls `notify()`
+today; anything that wants to notify the user later goes through this
+same module rather than rolling its own toast.
 
-- Same slide-in-from-the-edge treatment `.clock-panel` uses (`hidden`
-  toggled off, a forced reflow, *then* the class that starts the
-  `transform` transition — see "Taskbar clock" for why that specific
-  order matters), just anchored to the top-right corner instead of
-  hugging the taskbar.
-- Dismissible either way: a close button, or left alone for 9 seconds and
-  it hides itself — `role="status"` rather than `role="alert"`, since a
-  welcome message is worth mentioning, not worth interrupting anything for.
+- **No auto-dismiss timer, on purpose.** A real user closed a genuinely
+  9-second-lived version of this before it had a chance to actually be
+  read — the "helpful" auto-hide was working against the one thing a
+  greeting is *for*. It closes when its own ✕ is clicked, full stop.
+  `role="status"` rather than `role="alert"`, though — a notification is
+  worth mentioning, not worth interrupting anything for.
+- **"First visit" isn't its own flag** — `js/welcome.js` just checks
+  whether `'welcome'` is already in `listHistory()`; no separate
+  `localStorage` key, and so no separate `os:reset` listener either.
+  Reset Desktop already clears the *whole* history (`notifications.js`'s
+  own key), which is what makes a reset genuinely return this to "brand
+  new" too, not just visually — a real first visit finding the history
+  empty and a post-reset one finding it freshly emptied are the exact
+  same check, so there's only one `if` to write.
+- The history entries themselves persist (`localStorage`,
+  `os-notification-history`) — deduplicated by `id`, so a notification
+  that's fired more than once only ever appears once in the list (moved
+  to reflect its latest occurrence, not stacked as a duplicate).
 
 ## Start menu
 

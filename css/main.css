@@ -911,8 +911,8 @@ body {
   font: 16px sans-serif; /* matches the fillText() font it gets stamped with, in index.js */
 }
 
-/* ---------- WELCOME TOAST (welcome.js) ---------- */
-.welcome-toast {
+/* ---------- NOTIFICATION TOAST (notifications.js) ---------- */
+.notification-toast {
   position: fixed;
   z-index: 1200;
   top: 16px;
@@ -929,14 +929,14 @@ body {
   transform: translateX(calc(100% + 24px));
   transition: transform 0.3s ease;
 }
-.welcome-toast[hidden] {
+.notification-toast[hidden] {
   display: none;
 }
-.welcome-toast.is-open {
+.notification-toast.is-open {
   transform: translateX(0);
 }
 
-.welcome-toast-close {
+.notification-toast-close {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -953,21 +953,106 @@ body {
   font-size: 14px;
   line-height: 1;
 }
-.welcome-toast-close:hover,
-.welcome-toast-close:focus-visible {
+.notification-toast-close:hover,
+.notification-toast-close:focus-visible {
   opacity: 1;
   background: rgba(255,255,255,0.2);
   outline: none;
 }
 
-.welcome-toast-title {
+.notification-toast-title {
   margin: 0 22px 6px 0;
   font: 600 var(--fs-md) var(--font-accent);
   color: var(--text);
 }
-.welcome-toast-text {
+.notification-toast-text {
   margin: 0;
   font: var(--fs-sm) var(--font-main);
   color: var(--text-soft);
   line-height: 1.5;
+}
+
+/* the taskbar's bell button — same transparent-until-hovered treatment
+   #start-button uses, now that there's a second icon-only taskbar button
+   needing it */
+.taskbar-icon-button {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+}
+.taskbar-icon-button img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.taskbar-icon-button:hover,
+.taskbar-icon-button:focus-visible,
+.taskbar-icon-button.is-active {
+  background: var(--glass);
+  border-color: var(--glass-border);
+  outline: none;
+}
+
+/* ---------- NOTIFICATION HISTORY (notifications.js) ----------
+   Same glass-panel dropdown look as .start-menu, mirrored to the right
+   edge of the taskbar instead of the left. */
+.notification-history-menu {
+  position: fixed;
+  z-index: 1000;
+  right: 12px;
+  bottom: calc(var(--taskbar-height) + 8px);
+  width: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.4);
+}
+.notification-history-menu[hidden] {
+  display: none;
+}
+
+.notification-history-empty {
+  margin: 8px;
+  font: var(--fs-sm) var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.notification-history-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 2px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: var(--fs-sm) var(--font-mono);
+}
+.notification-history-item:hover,
+.notification-history-item:focus-visible {
+  background: rgba(255,255,255,0.2);
+  outline: none;
+}
+.notification-history-item-title {
+  display: block;
+  font-weight: 600;
+}
+.notification-history-item-time {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  opacity: 0.6;
 }
