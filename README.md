@@ -95,7 +95,11 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
-    └── system-info/               Start Menu only, not on the desktop — not in APPS (see "System Info")
+    ├── system-info/               Start Menu only, not on the desktop — not in APPS (see "System Info")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    └── terminal/                 Start Menu only, not on the desktop — not in APPS (see "Terminal")
         ├── index.html
         ├── index.css
         └── index.js
@@ -658,6 +662,35 @@ real. Both `williampp.jpg` and `two-hearts.png` are resolved in
 `index.html`, same reason every other icon does: a relative URL sitting
 in static HTML resolves against the *page's* URL once that HTML is
 injected, not this folder's.
+
+## Terminal
+
+**Terminal** (`apps/terminal/`) is another Start-Menu-only app, positioned
+just above Settings there — a small fake terminal: a fixed black
+background and green text regardless of the desktop theme (same call
+`js/power.js`'s boot log makes, for the same reason: it's meant to look
+like a real terminal, not a themed window), and every response typed out
+character by character with a blinking block cursor — literally reusing
+`power.js`'s boot-log `@keyframes` for that cursor, rather than
+redefining the same animation twice.
+
+- **Commands** are a plain `switch` in `index.js` — `help` (lists them),
+  `sysinfo` (the same bio facts as `apps/system-info`, as plain text),
+  `color <name>` (see below), and `clear`. Adding another later is one
+  more `case`.
+- **`color <name>`** repaints the whole terminal — prompt, past output,
+  and future output alike — via one CSS custom property
+  (`--term-fg`), not a per-line color. Eight fixed options, green by
+  default: green, white, amber, cyan, magenta, red, blue, orange. Nothing
+  here persists to `localStorage` — like Calculator and Notepad, every
+  new window opens fresh (green, empty scrollback), since nothing else
+  under `apps/` persists its own state either; only kernel modules
+  (`js/theme.js` and the like, booted once) do that.
+- The input is disabled while a response is still typing out, so a second
+  command can't get entered mid-animation and have its output interleave
+  with the first — same idea as Notepad's save-before-close prompt
+  blocking further edits, just simpler here (nothing async to await
+  permission for, just a fixed-interval `setTimeout` loop to wait out).
 
 ## Calculator
 

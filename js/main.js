@@ -26,6 +26,7 @@ const COMPUTER_ICON = icon('computer-storage.png');
 const CALCULATOR_ICON = icon('calculator.png');
 const NOTEPAD_ICON = icon('notes.png');
 const PAINT_ICON = icon('pallete.png');
+const TERMINAL_ICON = icon('web-development.png');
 
 export const APPS = [
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
@@ -37,18 +38,19 @@ export const APPS = [
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
-// not a desktop icon — only reachable from the Start Menu — so it lives
-// outside APPS (which also drives the desktop grid) rather than in it.
+// neither is a desktop icon — only reachable from the Start Menu — so
+// both live outside APPS (which also drives the desktop grid) rather than in it.
 const SYSTEM_INFO_APP = { id: 'system-info', name: 'System Info', icon: icon('information.png'), path: './apps/system-info/' };
+const TERMINAL_APP = { id: 'terminal', name: 'Terminal', icon: TERMINAL_ICON, path: './apps/terminal/' };
 
 // every app os:launch-app might need to resolve an id back to, whether or
 // not it's also a desktop icon (APPS)
-const ALL_APPS = [...APPS, SYSTEM_INFO_APP];
+const ALL_APPS = [...APPS, SYSTEM_INFO_APP, TERMINAL_APP];
 
 // the Start Menu shows a curated, specifically-ordered subset of ALL_APPS
 // rather than APPS itself — this exact list/order was requested directly,
 // so a desktop-only app like Calculator stays off it unless asked for
-const START_MENU_APPS = ['my-computer', 'browser', 'settings', 'system-info']
+const START_MENU_APPS = ['my-computer', 'browser', 'terminal', 'settings', 'system-info']
   .map((id) => ALL_APPS.find((a) => a.id === id));
 
 async function boot() {

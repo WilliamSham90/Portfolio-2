@@ -1,0 +1,65 @@
+@scope (.term-app) {
+  /* fixed black-terminal look regardless of the desktop theme — same call
+     power.js's boot log makes (css/main.css's .power-overlay/.power-boot-log),
+     and for the same reason: this is meant to look like a real terminal,
+     not a themed window. --term-fg is the one thing the color command
+     changes; everything else here just inherits it. */
+  :scope {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* fills the window when maximized/resized */
+    min-width: 360px;
+    min-height: 260px;
+    padding: 12px;
+    background: #0b0b0b;
+    color: var(--term-fg, #4dff6a);
+    font: var(--fs-base) var(--font-mono);
+  }
+
+  .term-output {
+    flex: 1;
+    min-height: 180px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  /* the line currently being typed out gets the same blinking block
+     cursor as the boot log — reuses its @keyframes rather than redefining
+     the same animation twice */
+  .term-typing::after {
+    content: '█';
+    animation: power-cursor-blink 1s step-end infinite;
+  }
+
+  .term-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .term-prompt {
+    white-space: nowrap;
+    opacity: 0.85;
+  }
+
+  .term-input {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    caret-color: currentColor;
+    font: inherit;
+  }
+  .term-input:focus-visible {
+    outline: none; /* the window itself already gets a focus/active treatment */
+  }
+  .term-input:disabled {
+    opacity: 0.5;
+  }
+}
