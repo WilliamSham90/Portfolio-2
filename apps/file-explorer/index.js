@@ -229,28 +229,31 @@ export function init(container, folderId) {
 
     // fonts are just a family list (no single file to open) — everything
     // else opens in a new tab and lets the browser's native viewer handle
-    // it, except images, which open in the in-OS media viewer instead
+    // it, except images (the in-OS media viewer) and music (the Music app)
     const openable = cat.key !== 'fonts';
     const isImages = cat.key === 'images';
-    const urlFor = (file) => new URL(`../../assets/${cat.key}/${file.file}`, import.meta.url).href;
+    const urlFor = (filename) => new URL(`../../assets/${cat.key}/${filename}`, import.meta.url).href;
 
     for (const file of files) {
       const entry = makeEntry(viewMode, {
         icon: cat.icon,
         name: file.name,
         kind: openable ? 'default' : 'static',
-        thumbnailUrl: isImages ? urlFor(file) : null,
+        // an image is its own thumbnail; anything else can name a `cover`
+        thumbnailUrl: isImages ? urlFor(file.file) : file.cover ? urlFor(file.cover) : null,
       });
       if (openable) {
         entry.mainEl.addEventListener('click', () => {
           if (isImages) {
-            const images = files.map((f) => ({ name: f.name, url: urlFor(f) }));
+            const images = files.map((f) => ({ name: f.name, url: urlFor(f.file) }));
             openApp(
               { id: 'media-viewer', name: file.name, icon: '🖼️', path: './apps/media-viewer/' },
               [{ images, index: files.indexOf(file) }],
             );
+          } else if (cat.key === 'music') {
+            playSong(file.id);
           } else {
-            window.open(urlFor(file), '_blank');
+            window.open(urlFor(file.file), '_blank');
           }
         });
       }
@@ -267,6 +270,14 @@ export function init(container, folderId) {
 
   render();
   maybeAutoUnlock(); // covers opening straight into a locked folder from the desktop
+}
+
+/** Plays a song in the Music app: an open Music window takes it (and comes
+ *  to the front) if there is one — see os:play-song in apps/music — or a
+ *  new one opens on it. */
+function playSong(id) {
+  const taken = !document.dispatchEvent(new CustomEvent('os:play-song', { detail: { id }, cancelable: true }));
+  if (!taken) openApp(APPS.find((a) => a.id === 'music'), [{ songId: id }]);
 }
 
 function heading(text) {

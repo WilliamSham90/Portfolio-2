@@ -27,6 +27,7 @@ const CALCULATOR_ICON = icon('calculator.png');
 const NOTEPAD_ICON = icon('notes.png');
 const PAINT_ICON = icon('pallete.png');
 const TERMINAL_ICON = icon('web-development.png');
+const MUSIC_ICON = icon('music.png');
 
 function gameFile(filename) {
   return new URL(`../games/${filename}`, import.meta.url).href;
@@ -57,6 +58,7 @@ export const APPS = [
   { id: 'calculator', name: 'Calculator', icon: CALCULATOR_ICON, path: './apps/calculator/' },
   { id: 'notepad', name: 'Notepad', icon: NOTEPAD_ICON, path: './apps/notepad/' },
   { id: 'paint', name: 'Paint', icon: PAINT_ICON, path: './apps/paint/' },
+  { id: 'music', name: 'Music', icon: MUSIC_ICON, path: './apps/music/' },
   ...GAMES,
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];

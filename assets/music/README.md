@@ -1,1 +1,1 @@
-Audio files (`.mp3`, `.ogg`, `.wav`, ...). See `assets/README.md` for how to reference a file from here.
+Audio files (`.mp3`, `.ogg`, `.wav`, ...), each with a square cover image. A song shows up in the Music app (and My Computer → Music) once it has a line in `assets/manifest.js` — see root README > "Music". See `assets/README.md` for how to reference a file from here.

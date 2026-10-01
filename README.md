@@ -98,6 +98,10 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
+    ├── music/                    music player for assets/music, spinning-record cover (see "Music")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
     ├── browser/                  iframe + address bar (see "Adding a new app later")
     │   ├── index.html
     │   ├── index.css
@@ -452,9 +456,11 @@ Desktop folders and the File Explorer ("My Computer") work together:
   can also be an **album** (`kind: 'album'` in `assets/manifest.js`,
   images-only so far but not images-specific) — it shows as a folder row;
   opening it shows just its own files, same rendering as a category.
-  Clicking a PDF/audio/video file opens it in a new tab and lets the
-  browser's own viewer handle it — no custom player yet. **Images** are
-  the one category with real handling: each row/cell shows the actual
+  Clicking a PDF/video file opens it in a new tab and lets the browser's
+  own viewer handle it. **Music** plays in the Music app instead (see
+  "Music"), each song shown with its cover art — any manifest entry can
+  name a `cover` image to be its icon here. **Images** get the fullest
+  handling: each row/cell shows the actual
   picture as its icon (not a generic 🖼️), and clicking one opens
   `apps/media-viewer/` — a small in-OS lightbox with prev/next through
   whatever list it was opened from (an album or a category's flat files).
@@ -467,8 +473,7 @@ Desktop folders and the File Explorer ("My Computer") work together:
   originally clicked.
 - Deliberately out of scope for now (all easy to add later, on top of
   the same pieces above): nested folders (albums are one level, on
-  purpose) and the custom-skinned music/video players — those need their
-  own focused design pass rather than being rushed in here.
+  purpose) and a custom-skinned video player.
 
 ## Right-click menu
 
@@ -925,6 +930,64 @@ single bend not two).
   meant to exceed the visible area (that's what zooming in means) and
   scrolls instead of fitting, so auto-fitting the underlying resolution
   to the viewport at the same time would just fight with that.
+
+## Music
+
+**Music** (`apps/music/`, desktop icon `music.png`) plays the songs in
+`assets/music/`. They're listed in `assets/manifest.js`'s `music` array —
+the same list the File Explorer's Music library shows — each with its
+`cover` image, a clean `title`/`artist` (the files' own tags came from
+YouTube rips and can't be trusted) and its `duration` in seconds.
+
+- **The current song's cover is a picture-disc record** that spins while
+  it plays: the art clipped to a circle with grooves, a vinyl rim and a
+  spindle hole drawn over it, all turning together, while the light's
+  reflection sits on a separate, still layer above it so the record
+  visibly turns *under* the light. Pausing pauses the animation rather
+  than removing it, so the record stops at whatever angle it reached and
+  carries on from there. A blurred copy of the cover glows under it.
+  Animating only `rotate` keeps it on the GPU, and
+  `prefers-reduced-motion` keeps the record still.
+- **Controls**: shuffle (a real Fisher–Yates shuffle of what plays after
+  the current song, so nothing repeats until everything has played),
+  previous (restarts the song first if it's past 3s, like any player),
+  play/pause, next, repeat (off → all → one), seek, volume and mute. The
+  song list underneath plays whatever's clicked, and marks the current
+  song with a small level meter that moves while it plays.
+- **Streaming, not downloading**: `<audio preload="none">` fetches nothing
+  until play is pressed, then streams with HTTP range requests (GitHub
+  Pages supports them), so a 10 MB song starts after its first few hundred
+  KB. Six of the files used to carry an embedded cover (up to 856 KB of
+  PNG) in the tag at the very start of the file, which the browser had to
+  download before the first note; those were stripped, with the audio
+  itself verified byte-for-byte unchanged.
+- **One player at a time, and the OS's media controls**: starting a song
+  in one Music window pauses any other, and the playing window owns the
+  Media Session, so the keyboard's media keys, a phone's lock screen and
+  the browser's own media controls show its song and cover and drive it.
+  Closing that window stops the music and clears all of that, so a closed
+  player can't keep answering the media keys.
+- **From My Computer**: clicking a song (My Computer → Music) plays it in
+  the Music window that's already open, bringing it to the front, rather
+  than opening a second player — the Explorer fires a cancelable
+  `os:play-song` event, an open Music window takes it, and only if none
+  does is a new one opened (`openApp(music, [{ songId }])`).
+- **Layout** follows the window, not the screen (container queries on
+  `.music-app`): stacked and centred when narrow (phones), record beside
+  the title at the usual window size, and record-plus-controls beside the
+  song list when maximized. On touch screens the volume slider is hidden
+  (phones use their volume buttons, and iOS ignores a page's volume
+  anyway), buttons grow to 44px, and hover highlights are kept to devices
+  that can really hover so a tapped button doesn't stay lit.
+- **Colours stay readable in every theme.** The theme accent (`--hotrose`)
+  is only 1.5:1 against Fated Dusk's light window, so the player's accent
+  is `color-mix(in oklch, var(--hotrose) 50%, var(--win-text))` — each
+  theme's own hue, at 3:1 or better in all six themes — and secondary text
+  is 80% of `--win-text`, 4.5:1 or better everywhere.
+- **Adding a song**: put the `.mp3` and a square cover image in
+  `assets/music/`, then add one line to `music` in `assets/manifest.js`
+  (`id`, `name` as My Computer should show it, `file`, `cover`, `title`,
+  `artist`, `duration` in seconds). Nothing else changes.
 
 ## Games
 
