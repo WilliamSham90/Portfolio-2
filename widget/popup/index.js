@@ -75,7 +75,7 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   activate(win, container);
 
   const handle = win.querySelector('.popup-titlebar');
-  makeDraggable(win, handle);
+  makeDraggable(win, handle, { canDrag: () => !win.classList.contains('is-maximized') }); // nothing to drag when it fills the screen
   makeResizable(win, body, win.querySelector('.popup-resize-handle'));
   makeMaximizable(win, body, handle, win.querySelector('.popup-maximize'));
   makeMinimizable(win, container, win.querySelector('.popup-minimize'));
@@ -97,8 +97,12 @@ function activate(win, container) {
  * the browser to animate) and only "bakes" that into real left/top once,
  * on release — much smoother than writing left/top on every pixel of
  * movement, especially on a blurred/translucent window like this one.
+ * Exported so NotAVirus.exe's popups (js/malware.js) drag the same way:
+ * `win` is anything absolutely positioned, `handle` where a drag can
+ * start (`win` itself is fine). A press on a button in the handle is that
+ * button's click, never a drag; `canDrag` is checked on every press.
  */
-function makeDraggable(win, handle) {
+export function makeDraggable(win, handle, { canDrag = () => true } = {}) {
   let dragging = false;
   let startX = 0, startY = 0;
   let originLeft = 0, originTop = 0;
@@ -111,8 +115,9 @@ function makeDraggable(win, handle) {
   };
 
   handle.addEventListener('pointerdown', (event) => {
-    if (event.target.closest('.popup-titlebar-actions')) return; // minimize/maximize/close, not a drag
-    if (win.classList.contains('is-maximized')) return; // nothing to drag when it's filling the screen
+    if (event.button !== 0) return; // a right-click opens a menu, it doesn't drag
+    if (event.target.closest('button')) return; // minimize/maximize/close etc. — a click, not a drag
+    if (!canDrag()) return;
     dragging = true;
     dx = 0;
     dy = 0;
@@ -147,11 +152,11 @@ function makeDraggable(win, handle) {
       rafId = null;
     }
     handle.classList.remove('is-dragging');
-    handle.releasePointerCapture(event.pointerId);
+    try { handle.releasePointerCapture(event.pointerId); } catch { /* already released (a cancelled touch) */ }
     document.body.style.userSelect = '';
 
-    // bounds = the popup's positioned ancestor (#popup-layer), which is
-    // sized to exactly the visible desktop area above the taskbar
+    // bounds = the positioned ancestor — for a window, #popup-layer, which
+    // is sized to exactly the visible desktop area above the taskbar
     const bounds = win.offsetParent.getBoundingClientRect();
     const maxLeft = Math.max(bounds.width - win.offsetWidth, 0);
     const maxTop = Math.max(bounds.height - win.offsetHeight, 0);

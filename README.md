@@ -1098,12 +1098,18 @@ is one localStorage flag.
   fake ads (loud, tilted, Arial Black — and an ad's button only ever opens
   another ad) and fake error messages (dressed as this OS's own windows,
   red title bar) start appearing at random spots on the desktop, one at a
-  time, each sooner than the last (1.8s apart, down to 0.4s). At 15 —
-  also the most ever on screen at once — "I told you this was a bad
-  idea." appears dead centre over a dimmed backdrop, with an OK and a hint
-  that Reset Desktop cleans it all up. Every popup closes with its ✕ or
-  OK. The pictures are icons from the existing set (the same Flaticon
-  pack as every other icon here).
+  time, each sooner than the last (1.8s apart, down to 0.4s) — 20 to 25
+  of them, a different number each run, and 25 is also the most ever on
+  screen at once. Then "I told you this was a bad idea." appears dead
+  centre over a dimmed backdrop, with an OK and a hint that Reset Desktop
+  cleans it all up. There are 25 different popups, drawn without
+  repeats, so even a full wave never shows the same one twice. Every
+  popup closes with its ✕ or OK, and **drags like a window** — an error
+  by its title bar, an ad from anywhere but its buttons — using the very
+  same `makeDraggable()` the windows use (`widget/popup/index.js`, see
+  "Windows"); pressing one brings it to the front, the way clicking a
+  window does. The pictures are icons from the existing set (the same
+  Flaticon pack as every other icon here).
 - **It sticks around**: after the wave, another popup turns up every
   8–12 minutes, on later visits too (`os-malware` in localStorage, which
   `js/main.js`'s `boot()` checks), until **Reset Desktop** — its
@@ -1118,7 +1124,7 @@ is one localStorage flag.
   runs, boot imports it only when the flag says this browser's infected,
   and the stylesheet loads with the first popup (`loadStylesheet()` from
   `js/loader.js`). The popups are plain elements in one layer, not real OS
-  windows: no backdrop-filter blur (fifteen blurred windows would cost a
+  windows: no backdrop-filter blur (25 blurred windows would cost a
   phone a lot of frames), `contain: layout style`, and only
   transform/opacity animate. Measured on a phone emulated with a 4×
   slower CPU, the whole wave held 60fps. The layer sits over every window
@@ -1225,7 +1231,11 @@ command line) is the standard way — but it's optional, not required.
 - `widget/popup/index.js` makes each window's titlebar draggable with
   Pointer Events. While dragging it moves via a CSS `transform` (cheap
   for the browser — no layout/paint per pixel), and only "bakes" that
-  into real `left`/`top` on release. Dragging is clamped so a window can
+  into real `left`/`top` on release. That `makeDraggable()` is exported,
+  and NotAVirus.exe's popups use it too (see "NotAVirus.exe"): a press on
+  any button in the handle is that button's click, never a drag, only the
+  primary button drags (a right-click opens the menu instead), and the
+  caller says when dragging is off (`canDrag` — a maximized window). Dragging is clamped so a window can
   never end up partially off-screen or hidden behind the taskbar — the
   opening position is clamped the same way (matters most on a short/narrow
   mobile viewport). That clamp can't just measure the window's real
