@@ -44,13 +44,17 @@ const SYSINFO_TEXT = [
 
 /**
  * @param {HTMLElement} container  this app's own root element
+ * @param {{color?: string, script?: string[]}} [options]  a COLORS name to
+ *   start in, and lines to type out (one after another, '' for a blank
+ *   line) in place of the greeting before the prompt unlocks — how
+ *   apps/malware's fake payload runs in a terminal
  */
-export function init(container) {
+export function init(container, { color: colorName = 'green', script = null } = {}) {
   const app = container.querySelector('.term-app');
   const output = container.querySelector('.term-output');
   const input = container.querySelector('.term-input');
 
-  let color = COLORS.green;
+  let color = COLORS[colorName] ?? COLORS.green;
   let busy = false;
   app.style.setProperty('--term-fg', color);
 
@@ -73,7 +77,17 @@ export function init(container) {
   runIntro();
 
   async function runIntro() {
-    await withInputLocked(() => typeText('Williams OS terminal — type "help" to get started.'));
+    if (!script) {
+      await withInputLocked(() => typeText('Williams OS terminal — type "help" to get started.'));
+      return;
+    }
+    await withInputLocked(async () => {
+      for (const line of script) {
+        if (line) await typeText(line);
+        else printLine('');
+        await new Promise((resolve) => setTimeout(resolve, 160)); // a beat between lines, for drama
+      }
+    });
   }
 
   async function runCommand(raw) {

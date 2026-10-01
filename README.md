@@ -9,7 +9,8 @@ Portfolio/
 ├── README.md
 │
 ├── css/
-│   └── main.css              layout/size tokens + DEFAULT color/font tokens
+│   ├── main.css              layout/size tokens + DEFAULT color/font tokens
+│   └── malware.css           NotAVirus.exe's popups — only loaded once it's run (see "NotAVirus.exe")
 │
 ├── js/                      the "kernel" — everything OS-shell-level that isn't a
 │   │                        widget/app (see "Adding a new app later")
@@ -28,7 +29,8 @@ Portfolio/
 │   ├── taskbar.js                 the open-window tab strip (see "Taskbar tabs")
 │   ├── download-file.js            saves a Blob to the visitor's own computer (see "Notepad")
 │   ├── notifications.js             the toast + its taskbar history dropdown (see "Notifications")
-│   └── welcome.js                   fires the one-time greeting notification (see "Notifications")
+│   ├── welcome.js                   fires the one-time greeting notification (see "Notifications")
+│   └── malware.js                   NotAVirus.exe's popup "infection" — loaded on demand (see "NotAVirus.exe")
 │
 ├── themes/                  theme DATA only (colors + a font choice), no logic
 │   ├── fonts.css             @font-face declarations for every theme's font
@@ -99,6 +101,10 @@ Portfolio/
     │   ├── index.css
     │   └── index.js
     ├── music/                    music player for assets/music, spinning-record cover (see "Music")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
+    ├── malware/                  NotAVirus.exe — the demo "malware", in the Malware folder (see "NotAVirus.exe")
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
@@ -391,17 +397,22 @@ Desktop folders and the File Explorer ("My Computer") work together:
   `PAIRS` key there — normal folders have none, which defaults to the
   plain generic one), so switching icon style re-skins every folder at
   once regardless.
-- **Three folders every fresh desktop starts with**: **Locked** and
-  **Malware**, both empty, and **Games**, holding the four Flash games
-  (see "Games") — `js/folders.js`'s `DEFAULT_FOLDERS`, used whole when
-  nothing's been saved yet (a first-ever visit, or right after Reset), so
-  genuinely deleting one of these sticks like any other delete would.
+- **Three folders every fresh desktop starts with**: **Locked** (empty),
+  **Malware**, holding NotAVirus.exe (see "NotAVirus.exe"), and
+  **Games**, holding the four Flash games (see "Games") —
+  `js/folders.js`'s `DEFAULT_FOLDERS`, used whole when nothing's been
+  saved yet (a first-ever visit, or right after Reset), so genuinely
+  deleting one of these sticks like any other delete would.
   A default folder added *later* — Games, for anyone whose folders were
   already saved before it existed — is handed to that visitor once:
   `os-folders-seeded` records which defaults a browser has been given
   (a saved list from before that key existed counts as having had Locked
   and Malware), `load()` adds any it hasn't, and the next `save()` marks
-  them given, so deleting Games afterwards still sticks too. **Locked**
+  them given, so deleting Games afterwards still sticks too. An app added
+  to a folder a visitor *already has* works the same way, through
+  `DEFAULT_FILINGS` (NotAVirus.exe into Malware): filed once, unless that
+  folder's been deleted or the app's already filed elsewhere, and never
+  forced back if it's moved out afterwards. **Locked**
   needs a password (`12345678`,
   `unlockFolder()`) the first time it's opened — `apps/file-explorer`
   prompts for it automatically the moment the folder is selected (desktop
@@ -412,8 +423,8 @@ Desktop folders and the File Explorer ("My Computer") work together:
   right sets `folder.unlocked = true` and persists that, so it only ever
   has to be entered once, not once per visit; Reset clears it back to
   locked along with everything else. **Malware** isn't actually
-  malware — it's an empty placeholder for education-focused content to
-  fill in later, nothing more.
+  malware — it holds the OS's harmless demo "malware" (NotAVirus.exe),
+  with room for more education-focused content later.
 - Folders live as regular icons on the desktop grid, right alongside
   apps — `widget/app-grid` asks `js/folders.js` for the current list and
   draws them with the exact same draggable/swappable icon it already
@@ -490,8 +501,9 @@ add a menu item, add one `{icon, label, run}` entry to `desktopItems()`
 `js/main.js`.
 
 **Reset Desktop** asks for confirmation, then wipes every piece of user
-customization — theme, folders, icon positions — back to first-boot
-defaults and reloads the page. Each piece of state stays owned by its own
+customization — theme, folders, icon positions, and a NotAVirus.exe
+"infection" (see "NotAVirus.exe") — back to first-boot defaults and
+reloads the page. Each piece of state stays owned by its own
 module (`js/theme.js`, `js/folders.js`, `widget/app-grid`); Reset doesn't
 reach into any of them directly, it just dispatches `os:reset` on
 `document` and each one clears its own `localStorage` key in response —
@@ -553,25 +565,31 @@ same module rather than rolling its own toast.
 transparent until hovered/active — a `.taskbar-divider` beside it in
 `index.html` is what actually marks the split from the open-window tabs,
 now that the button has no resting-state border/background of its own to
-imply it) and its dropdown. It's initialized as `initStartMenu(START_MENU_APPS)` from
-`js/main.js`'s `boot()` — receiving the app list as a parameter rather than
+imply it) and its dropdown. It's initialized as `initStartMenu(START_MENU_ITEMS)` from
+`js/main.js`'s `boot()` — receiving the list as a parameter rather than
 importing it back from `main.js` itself, since `main.js` already imports
 `start-menu.js`; importing it the other way round would be a circular
 import, and depending on evaluation order could hit that list before its
-`const` is initialized. `START_MENU_APPS` (`js/main.js`) is a specific,
-curated, *ordered* subset — **My Computer, Browser, Settings, System
-Info** — not `APPS` itself: this exact list/order was requested directly,
-so a desktop-only app (Calculator) stays off it unless asked for, plus
-**System Info**, which isn't a desktop icon at all and exists only as
-this one entry. Since it's not in `APPS`
-(which also drives the desktop grid), `js/main.js` keeps a second list,
-`ALL_APPS` (`[...APPS, SYSTEM_INFO_APP]`), for `os:launch-app` to resolve
-an id against — otherwise clicking System Info in the menu would fire the
-same event every other app click does, and `main.js` wouldn't be able to
-find it. The dropdown lists each app (same icon-or-emoji rendering as
-everywhere else, via `js/icon.js`) — clicking one fires `os:launch-app`,
-same event a desktop icon click fires — plus a Power off button at the
-bottom. It closes on outside-click, Escape, or launching an app.
+`const` is initialized. `START_MENU_ITEMS` (`js/main.js`) is a specific,
+curated, *ordered* list — **My Computer, Browser, Games, Music,
+Terminal, Settings, System Info** — not `APPS` itself: this exact
+list/order was requested directly, so a desktop-only app (Calculator)
+stays off it unless asked for. **System Info** and **Terminal** aren't
+desktop icons at all, so they're not in `APPS` (which also drives the
+desktop grid); `js/main.js` keeps a second list, `ALL_APPS`, for
+`os:launch-app` to resolve an id against — otherwise clicking one in
+the menu would fire the same event every other app click does, and
+`main.js` wouldn't be able to find it.
+
+**Games** isn't an app but the desktop's Games folder: any id in the
+list that isn't an app becomes `{ folderId }`, and the menu shows that
+folder — opening it the same way its desktop icon does (`os:open-folder`).
+The menu is rebuilt every time it opens rather than once at boot, so that
+entry always matches the folder itself: renamed, re-iconed by the Icon
+Style setting (blue/yellow `game-folder.png`), or left out entirely once
+the folder's been deleted. Each entry uses the same icon-or-emoji
+rendering as everywhere else (`js/icon.js`); a Power off button sits at
+the bottom. It closes on outside-click, Escape, or launching something.
 
 **Power off** (`js/power.js`) asks for confirmation first
 (`js/confirm-dialog.js`, same as deleting a folder), then shows
@@ -756,6 +774,12 @@ redefining the same animation twice.
   with the first — same idea as Notepad's save-before-close prompt
   blocking further edits, just simpler here (nothing async to await
   permission for, just a fixed-interval `setTimeout` loop to wait out).
+- **`init()` takes optional `{ color, script }`** — a starting color
+  (one of the eight names above) and lines to type out, one after another,
+  in place of the greeting, before the prompt unlocks as normal. Opened
+  from the Start menu it gets neither and behaves exactly as above;
+  NotAVirus.exe opens it with `{ color: 'red', script }` for its fake
+  payload (see "NotAVirus.exe"), so that's this same app, not a copy.
 
 ## Calculator
 
@@ -980,10 +1004,12 @@ YouTube rips and can't be trusted) and its `duration` in seconds.
   anyway), buttons grow to 44px, and hover highlights are kept to devices
   that can really hover so a tapped button doesn't stay lit.
 - **Colours stay readable in every theme.** The theme accent (`--hotrose`)
-  is only 1.5:1 against Fated Dusk's light window, so the player's accent
-  is `color-mix(in oklch, var(--hotrose) 50%, var(--win-text))` — each
-  theme's own hue, at 3:1 or better in all six themes — and secondary text
-  is 80% of `--win-text`, 4.5:1 or better everywhere.
+  is only 1.5:1 against Fated Dusk's light window, so the player uses
+  `--win-accent` (`css/main.css`: `--hotrose` pulled halfway toward
+  `--win-text` in oklch — each theme's own hue, at 3:1 or better in all
+  six themes) and `--win-text-soft` for secondary text (4.5:1 or better
+  everywhere). Both are derived from the theme rather than set by it, so
+  any app drawing on a window can use them (NotAVirus.exe does).
 - **Adding a song**: put the `.mp3` and a square cover image in
   `assets/music/`, then add one line to `music` in `assets/manifest.js`
   (`id`, `name` as My Computer should show it, `file`, `cover`, `title`,
@@ -1048,6 +1074,59 @@ folder, drawn with the icon packs' `gameFolder` icon (blue or yellow
   Newgrounds sponsor intro tries to fetch a file from newgrounds.com,
   which only allows that from Newgrounds itself. The game runs fine
   without it.
+
+## NotAVirus.exe
+
+The OS's demo "malware" (`apps/malware/`, icon `hacker.png`), filed in the
+desktop's **Malware** folder. All theatre: the only thing it ever touches
+is one localStorage flag.
+
+- **Three warnings first**, in its own small window: "Do you wish to run
+  this program?" with a tiny "yes" beside a big "No"; then "Are you
+  sure?" (the yes gets even smaller); then "You're really going to do
+  this? Well, it's your funeral…", whose Yes stays greyed out until the
+  "I acknowledge this is a bad app…" box is ticked. "No" at any step just
+  closes it, and No is always the focused button, so Enter is the safe
+  answer. The tiny yes is tiny *text* in a button that still meets the
+  24px minimum target size, so it's still tappable.
+- **The payload**: the prompt closes and a red terminal opens
+  (`payload.exe`, skull icon), typing out a fake hacking script ending in
+  an ASCII skull — the ordinary Terminal app opened with
+  `{ color: 'red', script }` (see "Terminal"). Script lines stay within 38
+  characters so nothing wraps on a phone.
+- **The popups** (`js/malware.js` + `css/malware.css`): a few seconds in,
+  fake ads (loud, tilted, Arial Black — and an ad's button only ever opens
+  another ad) and fake error messages (dressed as this OS's own windows,
+  red title bar) start appearing at random spots on the desktop, one at a
+  time, each sooner than the last (1.8s apart, down to 0.4s). At 15 —
+  also the most ever on screen at once — "I told you this was a bad
+  idea." appears dead centre over a dimmed backdrop, with an OK and a hint
+  that Reset Desktop cleans it all up. Every popup closes with its ✕ or
+  OK. The pictures are icons from the existing set (the same Flaticon
+  pack as every other icon here).
+- **It sticks around**: after the wave, another popup turns up every
+  8–12 minutes, on later visits too (`os-malware` in localStorage, which
+  `js/main.js`'s `boot()` checks), until **Reset Desktop** — its
+  `os:reset` clears the flag and stops it. Reloading an infected page
+  doesn't replay the wave, only the occasional popup.
+- **Later**: those every-so-often popups could become notifications
+  instead — `notify()` from `js/notifications.js` (a toast plus an entry
+  in the taskbar bell's history). The spot is marked in `scheduleRepeat()`
+  in `js/malware.js`.
+- **Cheap, including on phones**: an ordinary visit never downloads
+  `js/malware.js` or `css/malware.css` — the app imports the module when it
+  runs, boot imports it only when the flag says this browser's infected,
+  and the stylesheet loads with the first popup (`loadStylesheet()` from
+  `js/loader.js`). The popups are plain elements in one layer, not real OS
+  windows: no backdrop-filter blur (fifteen blurred windows would cost a
+  phone a lot of frames), `contain: layout style`, and only
+  transform/opacity animate. Measured on a phone emulated with a 4×
+  slower CPU, the whole wave held 60fps. The layer sits over every window
+  but under menus and dialogs, and inside the desktop area, so the
+  taskbar and Start menu stay usable throughout.
+- **Known limitation**: Reset Desktop lives in the right-click menu,
+  which iPhones have no gesture for (Android's long-press works), so an
+  iPhone visitor can close the popups but can't cure the infection.
 
 ## Adding a new app later
 

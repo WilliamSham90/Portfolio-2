@@ -59,6 +59,8 @@ export const APPS = [
   { id: 'notepad', name: 'Notepad', icon: NOTEPAD_ICON, path: './apps/notepad/' },
   { id: 'paint', name: 'Paint', icon: PAINT_ICON, path: './apps/paint/' },
   { id: 'music', name: 'Music', icon: MUSIC_ICON, path: './apps/music/' },
+  // the demo "malware" — js/folders.js files it into the Malware folder
+  { id: 'not-a-virus', name: 'NotAVirus.exe', icon: icon('hacker.png'), path: './apps/malware/' },
   ...GAMES,
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
@@ -74,9 +76,11 @@ const ALL_APPS = [...APPS, SYSTEM_INFO_APP, TERMINAL_APP];
 
 // the Start Menu shows a curated, specifically-ordered subset of ALL_APPS
 // rather than APPS itself — this exact list/order was requested directly,
-// so a desktop-only app like Calculator stays off it unless asked for
-const START_MENU_APPS = ['my-computer', 'browser', 'terminal', 'settings', 'system-info']
-  .map((id) => ALL_APPS.find((a) => a.id === id));
+// so a desktop-only app like Calculator stays off it unless asked for.
+// An id that isn't an app is a desktop folder (the Games folder), which
+// js/start-menu.js shows as that folder, under its current name and icon.
+const START_MENU_ITEMS = ['my-computer', 'browser', 'folder-games', 'music', 'terminal', 'settings', 'system-info']
+  .map((id) => ALL_APPS.find((a) => a.id === id) ?? { folderId: id });
 
 async function boot() {
   // 0. apply the saved (or default) theme/wallpaper before anything else
@@ -85,8 +89,19 @@ async function boot() {
   initWallpaper();
   initContextMenu();
   initPower();
-  initStartMenu(START_MENU_APPS);
+  initStartMenu(START_MENU_ITEMS);
   initTaskbar();
+
+  // a browser that ran NotAVirus.exe (apps/malware) — and hasn't been Reset
+  // since — keeps getting its popups, every visit. js/malware.js is only
+  // ever downloaded then, or when the app itself runs, never otherwise.
+  let infected = false;
+  try {
+    infected = localStorage.getItem('os-malware') !== null;
+  } catch {
+    // storage unavailable — nothing could have been persisted
+  }
+  if (infected) import('./malware.js').then((malware) => malware.resume());
 
   // 1. mount the icon grid widget, handing it the app list to render
   const gridRoot = document.getElementById('app-grid-root');

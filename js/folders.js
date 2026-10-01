@@ -19,7 +19,8 @@
    ===================================================================== */
 
 const STORAGE_KEY = 'os-folders';
-// ids of the DEFAULT_FOLDERS this browser has already been given — see load()
+// which DEFAULT_FOLDERS / DEFAULT_FILINGS this browser has already been
+// given — see load()
 const SEEDED_KEY = 'os-folders-seeded';
 const LOCKED_FOLDER_PASSWORD = '12345678';
 
@@ -32,9 +33,16 @@ const LOCKED_FOLDER_PASSWORD = '12345678';
 // Games' appIds are js/main.js's GAMES ids.
 const DEFAULT_FOLDERS = [
   { id: 'folder-locked', name: 'Locked', appIds: [], icon: 'lockedFolder', locked: true, unlocked: false },
-  { id: 'folder-malware', name: 'Malware', appIds: [], icon: 'malwareFolder' },
+  { id: 'folder-malware', name: 'Malware', appIds: ['not-a-virus'], icon: 'malwareFolder' },
   { id: 'folder-games', name: 'Games', appIds: ['alien-hominid', 'fleeing-the-complex', 'pac-man', 'impossible-quiz'], icon: 'gameFolder' },
 ];
+// apps filed into a default folder *after* that folder first shipped — so a
+// returning visitor, who already has the folder saved, still gets them
+// filed (once) rather than finding them loose on the desktop
+const DEFAULT_FILINGS = [
+  { folderId: 'folder-malware', appId: 'not-a-virus' },
+];
+const filingKey = ({ folderId, appId }) => `${folderId}/${appId}`;
 // a saved list from before SEEDED_KEY existed has already had these two
 const LEGACY_SEEDED = ['folder-locked', 'folder-malware'];
 
@@ -71,13 +79,19 @@ function load() {
   for (const f of DEFAULT_FOLDERS) {
     if (!given.includes(f.id) && !folders.some((x) => x.id === f.id)) folders.push({ ...f });
   }
+  // same idea for an app added to a folder they already have — skipped if
+  // that folder's been deleted, or the app's already filed somewhere
+  for (const filing of DEFAULT_FILINGS) {
+    if (given.includes(filingKey(filing)) || folders.some((f) => f.appIds.includes(filing.appId))) continue;
+    folders.find((f) => f.id === filing.folderId)?.appIds.push(filing.appId);
+  }
   return folders;
 }
 
 function save(folders) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(folders));
-    localStorage.setItem(SEEDED_KEY, JSON.stringify(DEFAULT_FOLDERS.map((f) => f.id)));
+    localStorage.setItem(SEEDED_KEY, JSON.stringify([...DEFAULT_FOLDERS.map((f) => f.id), ...DEFAULT_FILINGS.map(filingKey)]));
   } catch {
     // storage unavailable — folders just won't persist across reloads
   }

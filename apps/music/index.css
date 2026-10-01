@@ -1,14 +1,8 @@
 @scope (.music-app) {
   :scope {
-    /* the theme's accent pulled halfway toward its text colour: keeps each
-       theme's own hue, but stays 3:1+ against the window in all six themes
-       (raw --hotrose drops to 1.5:1 on Fated Dusk's light window) */
-    --accent: color-mix(in oklch, var(--hotrose) 50%, var(--win-text));
-    /* secondary text, still 4.5:1+ on --win-bg in every theme */
-    --text-soft: color-mix(in oklch, var(--win-text) 80%, var(--win-bg));
     --line: color-mix(in oklch, var(--win-text) 15%, transparent);
     --shadow-record: 0 6px 16px rgb(0 0 0 / 0.35); /* the record sits up off the window */
-    --shadow-focus: 0 0 0 2px var(--win-bg), 0 0 0 4px var(--accent);
+    --shadow-focus: 0 0 0 2px var(--win-bg), 0 0 0 4px var(--win-accent);
 
     container: music / size;
     /* opening size; maximized or resized, the min/max pair takes over and
@@ -152,7 +146,7 @@
   .music-artist {
     margin: 4px 0 0;
     font-size: var(--fs-base);
-    color: var(--text-soft);
+    color: var(--win-text-soft);
   }
 
   /* ---------- progress ---------- */
@@ -172,7 +166,7 @@
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
     font-variant-numeric: tabular-nums;
-    color: var(--text-soft);
+    color: var(--win-text-soft);
     text-align: start;
   }
 
@@ -195,7 +189,7 @@
   .music-range::-webkit-slider-runnable-track {
     block-size: 4px;
     border-radius: 999px;
-    background: linear-gradient(to right, var(--accent) var(--fill), var(--line) var(--fill));
+    background: linear-gradient(to right, var(--win-accent) var(--fill), var(--line) var(--fill));
   }
   .music-range::-webkit-slider-thumb {
     appearance: none;
@@ -204,7 +198,7 @@
     margin-block-start: -5px;
     border: 2px solid var(--win-bg);
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--win-accent);
   }
   .music-range::-moz-range-track {
     block-size: 4px;
@@ -214,14 +208,14 @@
   .music-range::-moz-range-progress {
     block-size: 4px;
     border-radius: 999px;
-    background: var(--accent);
+    background: var(--win-accent);
   }
   .music-range::-moz-range-thumb {
     inline-size: 10px;
     block-size: 10px;
     border: 2px solid var(--win-bg);
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--win-accent);
   }
   .music-range:focus-visible {
     outline: none;
@@ -268,7 +262,7 @@
   /* shuffle/repeat when on: accent colour plus a dot, so the state never
      rests on colour alone */
   .music-toggle[aria-pressed="true"] {
-    color: var(--accent);
+    color: var(--win-accent);
   }
   .music-toggle[aria-pressed="true"]::after {
     content: '';
@@ -283,7 +277,7 @@
   .music-play {
     inline-size: 52px;
     block-size: 52px;
-    background: var(--accent);
+    background: var(--win-accent);
     color: var(--win-bg);
   }
   .music-play svg {
@@ -377,13 +371,13 @@
   }
   .music-track-artist {
     font-size: var(--fs-sm);
-    color: var(--text-soft);
+    color: var(--win-text-soft);
   }
   .music-track-time {
     font-family: var(--font-mono);
     font-size: var(--fs-xs);
     font-variant-numeric: tabular-nums;
-    color: var(--text-soft);
+    color: var(--win-text-soft);
   }
 
   /* the playing song's level meter — bounces while it plays, rests when paused */
@@ -400,7 +394,7 @@
     inline-size: 3px;
     block-size: 100%;
     border-radius: 1px;
-    background: var(--accent);
+    background: var(--win-accent);
     transform-origin: bottom;
     scale: 1 0.4;
     animation: music-eq 0.9s ease-in-out infinite alternate paused;
@@ -482,7 +476,7 @@
       background: rgb(255 255 255 / 0.35);
     }
     .music-play:hover {
-      background: color-mix(in oklch, var(--accent) 80%, var(--win-text));
+      background: color-mix(in oklch, var(--win-accent) 80%, var(--win-text));
     }
     .music-track:hover {
       background: rgb(255 255 255 / 0.3);

@@ -69,6 +69,14 @@ button {
   --wrap-b: #1d1613;
   --wrap-c: #332923;
 
+  /* derived from the theme rather than set by it, for anything drawn on a
+     window (--win-bg). Raw --hotrose is too faint there in most themes
+     (1.5:1 on Fated Dusk), so --win-accent pulls it halfway toward the
+     text colour: each theme's own hue, 3:1+ in all six themes. Secondary
+     text at 80% of --win-text stays 4.5:1+ everywhere. */
+  --win-accent: color-mix(in oklch, var(--hotrose) 50%, var(--win-text));
+  --win-text-soft: color-mix(in oklch, var(--win-text) 80%, var(--win-bg));
+
   --glass: linear-gradient(135deg, rgba(var(--pearl-rgb),0.20), rgba(var(--aqua-rgb),0.14), rgba(var(--rose-rgb),0.16));
   --glass-border: rgba(255,255,255,0.42);
 

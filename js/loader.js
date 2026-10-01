@@ -26,10 +26,33 @@
    to the site root, and none of it breaks if loader.js itself ever moves.
    ===================================================================== */
 
-// base.href -> Promise that resolves once that folder's index.css has
-// actually loaded (not just been requested) — see loadWidget() for why
-// this needs to be awaited, not fire-and-forget.
+// stylesheet URL -> Promise that resolves once it has actually loaded (not
+// just been requested) — see loadWidget() for why this needs to be
+// awaited, not fire-and-forget.
 const styleReady = new Map();
+
+/**
+ * Links a stylesheet once, however many times it's asked for, and resolves
+ * once it has really loaded. Exported for kernel modules that build their
+ * own UI on demand (js/malware.js) rather than being a widget/app folder.
+ * @param {string} href  absolute URL
+ * @returns {Promise<void>}
+ */
+export function loadStylesheet(href) {
+  if (!styleReady.has(href)) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    styleReady.set(href, new Promise((resolve) => {
+      // resolve on error too — a missing/broken stylesheet shouldn't hang
+      // everything waiting on it forever
+      link.addEventListener('load', () => resolve(), { once: true });
+      link.addEventListener('error', () => resolve(), { once: true });
+    }));
+    document.head.appendChild(link);
+  }
+  return styleReady.get(href);
+}
 
 /**
  * @param {string} basePath   folder path relative to the site root, e.g. "./widget/popup/"
@@ -44,20 +67,6 @@ const styleReady = new Map();
 export async function loadWidget(basePath, mountPoint, options = {}) {
   const { multiple = false, initArgs = [] } = options;
   const base = new URL(basePath, document.baseURI);
-
-  if (!styleReady.has(base.href)) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = new URL('index.css', base).href;
-    styleReady.set(base.href, new Promise((resolve) => {
-      // resolve on error too — a missing/broken stylesheet shouldn't hang
-      // every future load of this folder forever
-      link.addEventListener('load', () => resolve(), { once: true });
-      link.addEventListener('error', () => resolve(), { once: true });
-    }));
-    document.head.appendChild(link);
-  }
-
   const htmlUrl = new URL('index.html', base);
   // fetched in parallel with the stylesheet load rather than after it —
   // no extra latency, just makes sure BOTH are actually done (not merely
@@ -73,7 +82,7 @@ export async function loadWidget(basePath, mountPoint, options = {}) {
       if (!res.ok) throw new Error(`Could not load ${htmlUrl} (${res.status})`);
       return res.text();
     }),
-    styleReady.get(base.href),
+    loadStylesheet(new URL('index.css', base).href),
     import(new URL('index.js', base).href),
   ]);
 

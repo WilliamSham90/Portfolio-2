@@ -8,7 +8,7 @@
     display: flex;
     flex-direction: column;
     height: 100%; /* fills the window when maximized/resized */
-    min-width: 360px;
+    min-width: min(360px, 90vw - 4px); /* never wider than the window can get (90vw, minus its borders) on a phone */
     min-height: 260px;
     padding: 12px;
     background: #0b0b0b;

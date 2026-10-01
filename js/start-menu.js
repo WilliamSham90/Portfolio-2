@@ -1,35 +1,50 @@
 /* =====================================================================
    start-menu.js
-   The taskbar's start button + its dropdown — every installed app, and
-   Power off at the bottom. `apps` is passed in by main.js (rather than
+   The taskbar's start button + its dropdown — the apps main.js lists, and
+   Power off at the bottom. `items` is passed in by main.js (rather than
    imported back from it) purely to avoid a circular import between the
    two modules; same reason widget/app-grid receives it as an init() arg
-   instead of importing main.js itself.
+   instead of importing main.js itself. An item is an app, or
+   {folderId} for a desktop folder (Games), which opens like its icon does.
    ===================================================================== */
 
 import { shutDown } from './power.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { isImageIcon } from './icon.js';
+import { getFolder } from './folders.js';
+import { styledIconUrl } from './icon-style.js';
 
-export function initStartMenu(apps) {
+export function initStartMenu(items) {
   const button = document.getElementById('start-button');
   const menu = document.getElementById('start-menu');
   const appsList = menu.querySelector('.start-menu-apps');
   const powerButton = menu.querySelector('.start-menu-power');
 
-  for (const app of apps) {
+  // built every time the menu opens, not once at boot, so a folder entry
+  // always matches the folder itself — renamed, re-iconed by the Icon
+  // Style setting, or left out entirely once it's been deleted
+  function renderItems() {
+    appsList.replaceChildren(...items.flatMap((item) => {
+      if (!item.folderId) return [menuItem(item.icon, item.name, 'os:launch-app', item.id)];
+      const folder = getFolder(item.folderId);
+      return folder ? [menuItem(styledIconUrl(folder.icon || 'folder'), folder.name, 'os:open-folder', folder.id)] : [];
+    }));
+  }
+
+  function menuItem(icon, name, eventName, id) {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'start-menu-app';
-    const iconHtml = isImageIcon(app.icon)
-      ? `<img class="start-menu-app-icon start-menu-app-icon-img icon-glow" src="${app.icon}" alt="" draggable="false">`
-      : `<span class="start-menu-app-icon">${app.icon}</span>`;
-    item.innerHTML = `${iconHtml}<span class="start-menu-app-name">${app.name}</span>`;
+    const iconHtml = isImageIcon(icon)
+      ? `<img class="start-menu-app-icon start-menu-app-icon-img icon-glow" src="${icon}" alt="" draggable="false">`
+      : `<span class="start-menu-app-icon">${icon}</span>`;
+    item.innerHTML = `${iconHtml}<span class="start-menu-app-name"></span>`;
+    item.querySelector('.start-menu-app-name').textContent = name; // a folder name is user-typed
     item.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('os:launch-app', { detail: { id: app.id } }));
+      document.dispatchEvent(new CustomEvent(eventName, { detail: { id } }));
       hide();
     });
-    appsList.appendChild(item);
+    return item;
   }
 
   powerButton.addEventListener('click', async () => {
@@ -50,6 +65,7 @@ export function initStartMenu(apps) {
   });
 
   function show() {
+    renderItems();
     menu.hidden = false;
     button.classList.add('is-active');
   }
