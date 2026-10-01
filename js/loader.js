@@ -65,13 +65,16 @@ export async function loadWidget(basePath, mountPoint, options = {}) {
   // this, the very first time a folder's CSS loads, a piece of index.js
   // that measures its own size right in init() (a popup window centering/
   // clamping itself, say) can run before that CSS has applied, and get a
-  // wrong, unstyled measurement.
-  const [html] = await Promise.all([
+  // wrong, unstyled measurement. The index.js module downloads alongside
+  // both too, rather than one round trip after them — safe because no
+  // index.js touches the page at import time, only inside init() below.
+  const [html, , mod] = await Promise.all([
     fetch(htmlUrl).then((res) => {
       if (!res.ok) throw new Error(`Could not load ${htmlUrl} (${res.status})`);
       return res.text();
     }),
     styleReady.get(base.href),
+    import(new URL('index.js', base).href),
   ]);
 
   const root = document.createElement('div');
@@ -84,7 +87,6 @@ export async function loadWidget(basePath, mountPoint, options = {}) {
     mountPoint.replaceChildren(root);
   }
 
-  const mod = await import(new URL('index.js', base).href);
   // whatever init() returns is handed straight back too — e.g.
   // widget/popup uses this so an app can return a per-instance
   // beforeClose() hook (Notepad's unsaved-changes prompt); it has to come

@@ -19,19 +19,24 @@
    ===================================================================== */
 
 const STORAGE_KEY = 'os-folders';
+// ids of the DEFAULT_FOLDERS this browser has already been given — see load()
+const SEEDED_KEY = 'os-folders-seeded';
 const LOCKED_FOLDER_PASSWORD = '12345678';
 
-// two folders every fresh desktop starts with (and gets back after a
-// Reset) — everything else about them (rename, delete, file an app into
-// them) works exactly like a folder the user created themselves, this is
-// just their starting name/icon/appIds. Only returned by load() below
-// when nothing's been saved yet; once anything folder-related is saved
+// folders every fresh desktop starts with (and gets back after a Reset) —
+// everything else about them (rename, delete, file an app into them)
+// works exactly like a folder the user created themselves, this is just
+// their starting name/icon/appIds. Once anything folder-related is saved
 // (including just unlocking "Locked"), that saved list is the only truth
 // from then on, so deleting one of these for real actually sticks.
+// Games' appIds are js/main.js's GAMES ids.
 const DEFAULT_FOLDERS = [
   { id: 'folder-locked', name: 'Locked', appIds: [], icon: 'lockedFolder', locked: true, unlocked: false },
   { id: 'folder-malware', name: 'Malware', appIds: [], icon: 'malwareFolder' },
+  { id: 'folder-games', name: 'Games', appIds: ['alien-hominid', 'fleeing-the-complex', 'pac-man', 'impossible-quiz'], icon: 'gameFolder' },
 ];
+// a saved list from before SEEDED_KEY existed has already had these two
+const LEGACY_SEEDED = ['folder-locked', 'folder-malware'];
 
 // part of the desktop's right-click "Reset" flow (context-menu.js) — the
 // page gets reloaded right after, so this just needs to stop persisting,
@@ -39,31 +44,40 @@ const DEFAULT_FOLDERS = [
 document.addEventListener('os:reset', () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SEEDED_KEY);
   } catch {
     // nothing to clean up if storage was never available
   }
 });
 
-function load() {
-  let raw = null;
+function readJson(key) {
   try {
-    raw = localStorage.getItem(STORAGE_KEY);
+    return JSON.parse(localStorage.getItem(key));
   } catch {
-    raw = null;
+    return null; // storage unavailable, or not valid JSON
   }
-  if (raw === null) return DEFAULT_FOLDERS.map((f) => ({ ...f })); // first ever visit, or since the last Reset
+}
 
-  try {
-    const saved = JSON.parse(raw);
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
+function load() {
+  const saved = readJson(STORAGE_KEY);
+  if (saved === null) return DEFAULT_FOLDERS.map((f) => ({ ...f })); // first ever visit, or since the last Reset
+  const folders = Array.isArray(saved) ? saved : [];
+
+  // a default folder added after this browser's list was first saved (Games)
+  // would otherwise never reach a returning visitor — hand it over once;
+  // save() then records it as given, so deleting it afterwards still sticks
+  const seeded = readJson(SEEDED_KEY);
+  const given = Array.isArray(seeded) ? seeded : LEGACY_SEEDED;
+  for (const f of DEFAULT_FOLDERS) {
+    if (!given.includes(f.id) && !folders.some((x) => x.id === f.id)) folders.push({ ...f });
   }
+  return folders;
 }
 
 function save(folders) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(folders));
+    localStorage.setItem(SEEDED_KEY, JSON.stringify(DEFAULT_FOLDERS.map((f) => f.id)));
   } catch {
     // storage unavailable — folders just won't persist across reloads
   }

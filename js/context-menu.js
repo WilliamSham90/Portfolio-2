@@ -90,6 +90,10 @@ export function initContextMenu() {
 
   document.addEventListener('contextmenu', (event) => {
     if (event.shiftKey) return; // let the real browser menu through
+    // something under the cursor already showed its own menu — a Flash
+    // game's Ruffle player (apps/flash-player) does, without stopping the
+    // event, so this one would otherwise pop up on top of it
+    if (event.defaultPrevented) return;
     event.preventDefault();
 
     const folderEl = event.target.closest('.app-icon[data-item-kind="folder"]');

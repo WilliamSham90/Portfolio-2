@@ -28,6 +28,28 @@ const NOTEPAD_ICON = icon('notes.png');
 const PAINT_ICON = icon('pallete.png');
 const TERMINAL_ICON = icon('web-development.png');
 
+function gameFile(filename) {
+  return new URL(`../games/${filename}`, import.meta.url).href;
+}
+
+// Flash games: regular apps (draggable, filable, taskbar tabs...) that all
+// open apps/flash-player with their own `args` — the .swf, plus its stage
+// size so the window opens at the game's shape. js/folders.js files every
+// one into the default Games folder, so they start off the desktop; a new
+// game's id needs adding there too (or it just sits on the desktop instead).
+const GAMES = [
+  { id: 'alien-hominid', name: 'Alien Hominid', cover: 'Alien_Hominid_cover.png', swf: 'alien_booya.swf', width: 550, height: 400 },
+  { id: 'fleeing-the-complex', name: 'Fleeing the Complex', cover: 'fleeing-the-complex.jpg', swf: 'fleeingthecomplexng.swf', width: 800, height: 480 },
+  { id: 'pac-man', name: 'Pac-Man', cover: 'pac-man.jpg', swf: 'pac-man.swf', width: 360, height: 420 },
+  { id: 'impossible-quiz', name: 'The Impossible Quiz', cover: 'The-Impossible-Quiz.jpg', swf: 'the-impossible-quiz.swf', width: 550, height: 400 },
+].map(({ id, name, cover, swf, width, height }) => ({
+  id,
+  name,
+  icon: gameFile(cover),
+  path: './apps/flash-player/',
+  args: [{ swf: gameFile(swf), width, height }],
+}));
+
 export const APPS = [
   { id: 'my-computer', name: 'My Computer', icon: COMPUTER_ICON, path: './apps/file-explorer/' },
   { id: 'browser', name: 'Browser', icon: BROWSER_ICON, path: './apps/browser/' },
@@ -35,6 +57,7 @@ export const APPS = [
   { id: 'calculator', name: 'Calculator', icon: CALCULATOR_ICON, path: './apps/calculator/' },
   { id: 'notepad', name: 'Notepad', icon: NOTEPAD_ICON, path: './apps/notepad/' },
   { id: 'paint', name: 'Paint', icon: PAINT_ICON, path: './apps/paint/' },
+  ...GAMES,
   // { id: 'next-app', name: 'Next App', icon: '✨', path: './apps/next-app/' },
 ];
 
@@ -96,9 +119,10 @@ let openCount = 0;
 /**
  * Opens an app window. Exported so other modules can launch one that
  * isn't necessarily in APPS/on the desktop — e.g. apps/file-explorer
- * opening apps/media-viewer when an image is clicked.
+ * opening apps/media-viewer when an image is clicked. With no
+ * appInitArgs, an app's own `args` (if any — the GAMES entries) are used.
  */
-export async function openApp(app, appInitArgs = []) {
+export async function openApp(app, appInitArgs = app.args ?? []) {
   const popupLayer = document.getElementById('popup-layer');
 
   // each open app gets its own popup instance, offset slightly so

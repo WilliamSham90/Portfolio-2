@@ -7,10 +7,11 @@
    font is ever downloaded.
 
    Files live in /assets/fonts, one subfolder per family (see
-   assets/README.md). Paths below match those folders' actual names
-   exactly, including case — GitHub Pages (Linux) is case-sensitive even
-   though Windows isn't, so a casing mismatch here would work locally and
-   404 once deployed.
+   assets/README.md) — served as .woff2, ~60% smaller than the .ttf
+   beside each one (that's only its source). Paths below match those
+   folders' actual names exactly, including case — GitHub Pages (Linux)
+   is case-sensitive even though Windows isn't, so a casing mismatch here
+   would work locally and 404 once deployed.
    ===================================================================== */
 
 @font-face {
@@ -18,14 +19,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/Quicksand/Quicksand-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/Quicksand/Quicksand-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Quicksand';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../assets/fonts/Quicksand/Quicksand-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/Quicksand/Quicksand-Bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -33,14 +34,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/SpaceMono/SpaceMono-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceMono/SpaceMono-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Space Mono';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../assets/fonts/SpaceMono/SpaceMono-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceMono/SpaceMono-Bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -48,14 +49,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/cinzel/Cinzel-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/cinzel/Cinzel-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cinzel';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../assets/fonts/cinzel/Cinzel-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/cinzel/Cinzel-Bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -63,7 +64,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/ArchitectsDaughter/ArchitectsDaughter-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/ArchitectsDaughter/ArchitectsDaughter-Regular.woff2') format('woff2');
 }
 
 @font-face {
@@ -71,14 +72,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Space Grotesk';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/SpaceGrotesk/SpaceGrotesk-Bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -86,12 +87,12 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../assets/fonts/orbitron/Orbitron-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/orbitron/Orbitron-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Orbitron';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('../assets/fonts/orbitron/Orbitron-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/orbitron/Orbitron-Bold.woff2') format('woff2');
 }

@@ -45,12 +45,14 @@ function wallpaperUrl(file) {
   return new URL(`../assets/images/Background Images/${file}`, import.meta.url).href;
 }
 
-/** Every wallpaper, as {id, name, url} — url is null for "None". */
+/** Every wallpaper, as {id, name, thumbUrl} — thumbUrl is null for "None".
+ *  Thumbnails are small copies in Background Images/thumbs/ (same file
+ *  names), so the Settings picker never downloads the full-size photos. */
 export function listWallpapers() {
   return Object.entries(WALLPAPERS).map(([id, w]) => ({
     id,
     name: w.name,
-    url: w.file ? wallpaperUrl(w.file) : null,
+    thumbUrl: w.file ? wallpaperUrl(`thumbs/${w.file}`) : null,
   }));
 }
 

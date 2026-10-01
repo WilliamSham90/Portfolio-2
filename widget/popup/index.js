@@ -33,7 +33,10 @@ export async function init(container, app, offset = 0, appInitArgs = []) {
   // can't end up overflowing (or noticeably off-center) once it settles.
   const layerBounds = container.parentElement.getBoundingClientRect();
   const maxPossibleWidth = Math.min(600, layerBounds.width * 0.9); // matches index.css's max-width: min(600px, 90vw)
-  const maxPossibleHeight = Math.min(layerBounds.height * 0.7 + 30, layerBounds.height); // 70vh body cap + ~30px titlebar
+  // 70vh body cap (vh = the whole viewport, taskbar included — not this
+  // layer) + 30px titlebar + 2x2px border; under-guessing this let a
+  // tall window open with its bottom edge and resize grip behind the taskbar
+  const maxPossibleHeight = Math.min(window.innerHeight * 0.7 + 34, layerBounds.height);
   const openLeft = Math.max(layerBounds.width - maxPossibleWidth, 0);
   const openTop = Math.max(layerBounds.height - maxPossibleHeight, 0);
   // centered by default (openLeft/openTop already equal the leftover space

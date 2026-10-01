@@ -106,8 +106,8 @@ function initWallpaperSection(container) {
     // "None" gets the same gradient the desktop itself falls back to
     // (--desktop-gradient, main.css) instead of an <img> — there's no
     // photo to fetch for it, so it shouldn't request one
-    const previewHtml = wallpaper.url
-      ? `<img class="wallpaper-preview" src="${wallpaper.url}" alt="" draggable="false" loading="lazy" decoding="async">`
+    const previewHtml = wallpaper.thumbUrl
+      ? `<img class="wallpaper-preview" src="${wallpaper.thumbUrl}" alt="" draggable="false" loading="lazy" decoding="async">`
       : `<span class="wallpaper-preview wallpaper-preview-none"></span>`;
     card.innerHTML = `
       ${previewHtml}

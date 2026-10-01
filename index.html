@@ -4,8 +4,39 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My OS</title>
+  <!-- without one, every visit also requests a /favicon.ico that 404s -->
+  <link rel="icon" type="image/png" href="./assets/system/Icons/basic/home.png">
   <link rel="stylesheet" href="./css/main.css">
   <link rel="stylesheet" href="./themes/fonts.css">
+
+  <!-- Every module js/main.js pulls in at boot, plus the desktop's icon-grid
+       widget, listed flat so the browser fetches them all at once instead of
+       discovering them one import-level at a time (main.js, then its imports,
+       then theirs, then the widget loader.js mounts) — no build step needed.
+       Speed hints only: a module missing from this list still loads, later. -->
+  <link rel="modulepreload" href="./js/loader.js">
+  <link rel="modulepreload" href="./js/theme.js">
+  <link rel="modulepreload" href="./js/wallpaper.js">
+  <link rel="modulepreload" href="./js/context-menu.js">
+  <link rel="modulepreload" href="./js/start-menu.js">
+  <link rel="modulepreload" href="./js/power.js">
+  <link rel="modulepreload" href="./js/clock-panel.js">
+  <link rel="modulepreload" href="./js/taskbar.js">
+  <link rel="modulepreload" href="./js/notifications.js">
+  <link rel="modulepreload" href="./js/welcome.js">
+  <link rel="modulepreload" href="./js/folders.js">
+  <link rel="modulepreload" href="./js/confirm-dialog.js">
+  <link rel="modulepreload" href="./js/icon-style.js">
+  <link rel="modulepreload" href="./js/icon.js">
+  <link rel="modulepreload" href="./themes/dial-up-dream.js">
+  <link rel="modulepreload" href="./themes/millennium-brick.js">
+  <link rel="modulepreload" href="./themes/fated-dusk.js">
+  <link rel="modulepreload" href="./themes/red-october.js">
+  <link rel="modulepreload" href="./themes/paradise-protocol.js">
+  <link rel="modulepreload" href="./themes/krystal-core.js">
+  <link rel="modulepreload" href="./widget/app-grid/index.js">
+  <link rel="preload" href="./widget/app-grid/index.css" as="style">
+  <link rel="preload" href="./widget/app-grid/index.html" as="fetch" crossorigin>
 </head>
 <body>
 

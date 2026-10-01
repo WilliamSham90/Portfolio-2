@@ -43,8 +43,9 @@ Portfolio/
 │   ├── manifest.js           registry of files the File Explorer can browse
 │   ├── images/
 │   │   └── Background Images/  the 11 wallpaper photos (see "Wallpaper") — also a
-│   │                            regular Explorer album (manifest.js), not exclusive
-│   │                            to the desktop wallpaper picker
+│   │       │                    regular Explorer album (manifest.js), not exclusive
+│   │       │                    to the desktop wallpaper picker
+│   │       └── thumbs/           small copies for the Settings picker, same file names
 │   ├── music/
 │   ├── fonts/                (theme font files go here — see "Theme fonts")
 │   ├── pdf/
@@ -54,6 +55,8 @@ Portfolio/
 │           ├── basic/            app-icon placeholders, the start button, power buttons, file types
 │           ├── blue folders/     one of the two selectable folder-icon packs
 │           └── yellow folders/   the other — default (see "Icons")
+│
+├── games/                   the Flash games: each .swf + its cover image (see "Games")
 │
 ├── widget/
 │   ├── app-grid/             icon grid widget — sits on top of the desktop
@@ -91,6 +94,10 @@ Portfolio/
     │   ├── index.html
     │   ├── index.css
     │   └── index.js
+    ├── flash-player/             plays one games/*.swf in its window, via Ruffle (see "Games")
+    │   ├── index.html
+    │   ├── index.css
+    │   └── index.js
     ├── browser/                  iframe + address bar (see "Adding a new app later")
     │   ├── index.html
     │   ├── index.css
@@ -121,7 +128,17 @@ iframes involved:
    that CSS has applied and get a wrong, unstyled measurement — a real
    bug this surfaced once, not a hypothetical one.
 3. `import()`s the folder's `index.js` as an ES module and calls its
-   `init()` with the container
+   `init()` with the container — the module downloads *alongside* steps
+   1–2 rather than after them (one round trip on an app's first open, not
+   two), which is safe because no `index.js` touches the page at import
+   time, only inside `init()`. Keep it that way in any new app.
+
+`index.html`'s `<head>` also lists every module `js/main.js` imports at
+boot (plus `widget/app-grid`'s files) as `<link rel="modulepreload">` /
+`preload` hints, so the browser fetches the whole boot graph at once
+instead of discovering it one `import` level at a time — the no-build-step
+version of what a bundler does. They're only hints: a module missing from
+that list still loads, just later, so add new boot-time imports there too.
 
 Each `index.css` wraps its rules in `@scope (...) { }`, so a widget or
 app's styles can never leak out and affect anything else on the page —
@@ -230,8 +247,11 @@ won't notice a mismatch here, but GitHub Pages (Linux) will 404, so if
 you re-download or rename a family, keep `fonts.css`'s `url(...)` paths
 byte-for-byte matched to the real folder/file names.
 
-To add a 7th theme's font (or swap one of these): drop the `.ttf` (or
-`.woff2`) files anywhere under `assets/fonts/`, add matching `@font-face`
+`themes/fonts.css` serves each of these as `.woff2` — converted from the
+`.ttf` beside it (fontTools), about 60% smaller over the wire; the `.ttf`
+files are just the sources now. To add a 7th theme's font (or swap one of
+these): put a `.woff2` (convert a `.ttf` with fontTools, or download the
+woff2 directly) anywhere under `assets/fonts/`, add matching `@font-face`
 rules to `themes/fonts.css`, and point that theme's `fonts.display.family`
 (in its file under `/themes`) at the family name you used.
 
@@ -277,6 +297,12 @@ flag threaded through the data.
   entirely.
 - Picked from the **Icon Style** section of the Settings app (same
   active-indicator-card pattern as the theme picker just above it).
+- **Every icon file is stored at 128×128** (`power-button green.png`,
+  shown at 64px, at 192) — 3× the largest size any icon is drawn at, so
+  still sharp on high-density phone screens — as palette-quantized PNGs
+  (the pngquant technique: same `.png` names, alpha intact) of ~11 KB
+  each, down from 512px originals of ~130 KB each. A new icon should be
+  sized the same way; a 512px one works, it's just ~10× heavier.
 
 ## Wallpaper
 
@@ -307,13 +333,17 @@ Night** (`City Night.webp`).
 - The Settings app's **Wallpaper** section lists all twelve options
   (`listWallpapers()`) as cards with a real photo thumbnail each — except
   **None**, which previews `--desktop-gradient` directly rather than
-  fetching an image for something that has no photo to show. The
-  thumbnails are real (if browser-cached) image requests, same tradeoff
-  `apps/file-explorer`'s image rows/cells already make: this is a static
-  site with no build step to pre-generate smaller thumbnail files, so a
-  correctly-sized `<img>` (`loading="lazy"`, `decoding="async"`) scaling
-  the real photo down is the honest, achievable option, not a shortcut
-  taken carelessly.
+  fetching an image for something that has no photo to show. Each
+  thumbnail is a small copy of its photo in `Background Images/thumbs/`
+  (same file name, 320px wide, 3–13 KB) rather than the full photo scaled
+  down by the `<img>` — before those existed, opening Settings downloaded
+  every full-size wallpaper just to draw the cards (~40 MB at the time).
+  Adding a wallpaper therefore means two files: the photo, and its
+  `thumbs/` copy.
+- The full-size photos are capped at 2560px wide (WebP, quality 82) —
+  plenty for a `cover`-scaled background on any common screen. The
+  originals were 4–8K photos of 2–7 MB each, which also cost real decode
+  time and memory every time one was applied.
 - The same eleven photos are also a regular **Background Images** album
   under Images in `apps/file-explorer` (`assets/manifest.js`) — browsable
   and openable in `apps/media-viewer` like any other album, independent
@@ -357,11 +387,18 @@ Desktop folders and the File Explorer ("My Computer") work together:
   `PAIRS` key there — normal folders have none, which defaults to the
   plain generic one), so switching icon style re-skins every folder at
   once regardless.
-- **Two folders every fresh desktop starts with**: **Locked** and
-  **Malware**, both empty — `js/folders.js`'s `DEFAULT_FOLDERS`, only
-  ever returned when nothing's been saved yet (a first-ever visit, or
-  right after Reset), so genuinely deleting one of these sticks like any
-  other delete would. **Locked** needs a password (`12345678`,
+- **Three folders every fresh desktop starts with**: **Locked** and
+  **Malware**, both empty, and **Games**, holding the four Flash games
+  (see "Games") — `js/folders.js`'s `DEFAULT_FOLDERS`, used whole when
+  nothing's been saved yet (a first-ever visit, or right after Reset), so
+  genuinely deleting one of these sticks like any other delete would.
+  A default folder added *later* — Games, for anyone whose folders were
+  already saved before it existed — is handed to that visitor once:
+  `os-folders-seeded` records which defaults a browser has been given
+  (a saved list from before that key existed counts as having had Locked
+  and Malware), `load()` adds any it hasn't, and the next `save()` marks
+  them given, so deleting Games afterwards still sticks too. **Locked**
+  needs a password (`12345678`,
   `unlockFolder()`) the first time it's opened — `apps/file-explorer`
   prompts for it automatically the moment the folder is selected (desktop
   icon or sidebar, either one), via `js/password-dialog.js` (a second
@@ -456,6 +493,10 @@ reach into any of them directly, it just dispatches `os:reset` on
 same loose-coupling pattern as everything else here, and it means a
 future module with its own persisted state only has to add its own
 listener, no changes needed anywhere else.
+
+A right-click that something under the cursor already handled with its
+own menu (`event.defaultPrevented` — a Flash game's Ruffle player does
+this, see "Games") is left alone too, so the two menus never stack.
 
 **Shift+right-click still opens the real browser menu** — the handler
 checks `event.shiftKey` and simply doesn't call `preventDefault()` when
@@ -885,6 +926,66 @@ single bend not two).
   scrolls instead of fitting, so auto-fitting the underlying resolution
   to the viewport at the same time would just fight with that.
 
+## Games
+
+Four Flash games — **Alien Hominid**, **Fleeing the Complex**,
+**Pac-Man** and **The Impossible Quiz** — live in `games/` (each `.swf`
+next to its cover image) and start out filed in the desktop's **Games**
+folder, drawn with the icon packs' `gameFolder` icon (blue or yellow
+`game-folder.png`, following the Icon Style setting like every folder).
+
+- **Each game is an ordinary app.** `GAMES` in `js/main.js` is spread
+  into `APPS`, every entry with its cover as its `icon` and the same
+  `path` (`apps/flash-player/`), plus `args: [{ swf, width, height }]` —
+  `openApp()` uses an app's own `args` when it's launched without
+  explicit ones, which is how one player app opens four different games.
+  So everything an app can do, a game can: open in a draggable/resizable
+  window, get its own taskbar tab (cover as icon), be dragged out of the
+  Games folder onto the desktop (the ✕ in the Explorer), or into another
+  folder.
+- **`apps/flash-player/`** plays the `.swf` through
+  [Ruffle](https://ruffle.rs), the Flash Player emulator (WebAssembly, no
+  plugin). Ruffle is ~5 MB, so it's fetched the first time a game opens —
+  never at boot — from jsDelivr, pinned to an exact version (0.6.0) with
+  an SRI `integrity` hash: an unpinned "latest" URL can change under the
+  site without warning. jsDelivr serves it brotli-compressed and cached
+  for a year, so it's a one-time download. Configured with
+  `polyfills: false` (otherwise Ruffle watches every DOM change on the
+  page looking for `<object>`/`<embed>` Flash content to replace),
+  `autoplay: 'on'` (the click that opened the window counts as the user
+  gesture browsers want before playing sound), `letterbox: 'on'` and
+  `openUrlMode: 'deny'` (a game's own sponsor/"more games" links can't
+  navigate this page away).
+- **`init()` returns immediately** and loads the game in the background —
+  `js/main.js` only wires up a window's close button and taskbar tab once
+  the app's `init()` has resolved, so awaiting a multi-megabyte download
+  there would leave both dead until it finished.
+- **Window size**: a game window opens at the game's own shape — `width`/
+  `height` in `GAMES` are the SWF's stage size, turned into the player's
+  `aspect-ratio` — as big as the window's usual caps allow. Maximized or
+  resized, the player fills the window exactly and Ruffle letterboxes the
+  game inside it, so it's never stretched and never scrolls.
+- **Minimize pauses the game** (no sound or CPU from a window you can't
+  see) and restoring resumes it — unless it was already paused from
+  Ruffle's own menu. **Closing** needs no code at all: removing the
+  `<ruffle-player>` from the page is what tears Ruffle down, sound and all.
+- **Right-click inside a game** shows Ruffle's own menu (fullscreen,
+  volume, quality…) rather than the desktop one — see "Right-click menu".
+  `.flash-player` is `isolation: isolate`, so Ruffle's own z-indexed
+  overlays (its warnings, dialogs, that menu) stay inside the game area
+  and can never cover the window's resize grip.
+- **Adding a game**: drop its `.swf` and a square cover image into
+  `games/`, add one line to `GAMES` (its stage size: open it once and read
+  `document.querySelector('.flash-player-ruffle').ruffle().metadata` in the
+  console), and add its `id` to the Games folder's `appIds` in
+  `js/folders.js` — skip that and it simply appears on the desktop instead.
+  GitHub rejects files over 100 MB; Fleeing the Complex is the big one,
+  at 34.5 MB (Ruffle shows a progress bar while it downloads).
+- Fleeing the Complex logs one CORS error in the console: its built-in
+  Newgrounds sponsor intro tries to fetch a file from newgrounds.com,
+  which only allows that from Newgrounds itself. The game runs fine
+  without it.
+
 ## Adding a new app later
 
 1. Duplicate an existing app folder, e.g. `apps/calculator/` → `apps/your-app/`.
@@ -893,7 +994,10 @@ single bend not two).
    ```js
    { id: 'your-app', name: 'Your App', icon: '✨', path: './apps/your-app/' }
    ```
-That's it — no other file needs to change.
+That's it — no other file needs to change. (An entry can also carry
+`args: [...]` — extra arguments for its `init()` whenever it's launched,
+the way every game passes its own `.swf` to `apps/flash-player` — see
+"Games".)
 
 **Browser** (`apps/browser/`) is a normal popup app like any other —
 `{ id, name, icon, path: './apps/browser/' }` — just one whose content is
@@ -928,7 +1032,7 @@ clicking `index.html` will not work.
 1. Create a new **public** repository on github.com (Pages' free tier requires public).
 2. On the repo page: **Add file → Upload files**, then drag in everything
    *inside* the `Portfolio` folder (`index.html`, `README.md`, and the
-   `css/`, `js/`, `widget/`, `apps/`, `themes/` and `assets/` folders) —
+   `css/`, `js/`, `widget/`, `apps/`, `themes/`, `games/` and `assets/` folders) —
    not the `Portfolio` folder itself, its contents, so `index.html` ends
    up at the repo root. Commit the changes. (Git can't track a truly
    empty folder, so if one of the `assets/` subfolders is still empty, it
@@ -991,6 +1095,12 @@ command line) is the standard way — but it's optional, not required.
   waiting on that; the real size, once content loads, is always that or
   smaller, so a window positioned/centered to fit its max-possible size
   can't end up overflowing (or noticeably off-center) once it settles.
+  The height side mirrors `.popup-body`'s `max-height: 70vh` the same
+  way — 70% of the whole *viewport* (`vh` includes the taskbar's strip),
+  plus the 30px titlebar and the 2px borders. It once used 70% of the
+  desktop layer and ignored the borders instead, ~40px short, so a window
+  tall enough to hit that cap (Settings, any game) could open with its
+  bottom edge and resize grip hidden behind the taskbar.
   Windows open centered by default — `openLeft`/`openTop` (the clamp's own
   bounds) already equal the leftover space around a worst-case-sized
   window, so half of each is dead center, no separate calculation needed —
